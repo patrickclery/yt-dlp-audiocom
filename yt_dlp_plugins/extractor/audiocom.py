@@ -6,7 +6,7 @@
 # yt-dlp imports every plugin on every run, so this module does no work at
 # import time: only imports and the class definition live at the top level.
 from yt_dlp.extractor.common import InfoExtractor
-from yt_dlp.utils import ExtractorError, float_or_none, url_or_none
+from yt_dlp.utils import ExtractorError, float_or_none, int_or_none, mimetype2ext, url_or_none
 from yt_dlp.utils.traversal import traverse_obj
 
 
@@ -48,15 +48,22 @@ class AudioComIE(InfoExtractor):
 
         formats = []
         for t in traverse_obj(data, ('transcodings', lambda _, v: url_or_none(v['url']))):
-            ext = traverse_obj(t, ('format', {str}))
+            ext = traverse_obj(t, ('format', {str}, filter)) or mimetype2ext(traverse_obj(t, ('type', {str})))
+            abr = traverse_obj(t, ('bit_rate', {lambda x: float_or_none(x, 1000)}))
             formats.append({
                 'url': t['url'],
                 'format_id': ext,
                 'ext': ext,
                 'vcodec': 'none',
+                'abr': abr,
+                # The default sort ranks quality ahead of acodec, so the highest
+                # bitrate wins (D-07). Without it a 9 kbps m4a beats a 160 kbps mp3.
+                'quality': abr,
                 **traverse_obj(t, {
                     'acodec': ('codec', {str}),
-                    'abr': ('bit_rate', {lambda x: float_or_none(x, 1000)}),
+                    'asr': ('sample_rate', {int_or_none}),
+                    'audio_channels': ('channels', {int_or_none}),
+                    'filesize': ('size', {int_or_none}),
                 }),
             })
         if not formats:
