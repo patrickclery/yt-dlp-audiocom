@@ -6,6 +6,7 @@
 # yt-dlp imports every plugin on every run, so this module does no work at
 # import time: only imports and the class definition live at the top level.
 from yt_dlp.extractor.common import InfoExtractor
+from yt_dlp.networking.exceptions import HTTPError
 from yt_dlp.utils import ExtractorError, float_or_none, int_or_none, mimetype2ext, url_or_none
 from yt_dlp.utils.traversal import traverse_obj
 
@@ -45,15 +46,27 @@ class AudioComIE(InfoExtractor):
         # oEmbed 404s on www., trailing slash, query and uppercase input.
         return f'https://audio.com/{user.lower()}/audio/{slug.lower()}'
 
+    def _call_api(self, path, video_id, note, **kwargs):
+        # A 404 is a deleted, private or mistyped track: a user error, not a bug,
+        # so it must not carry yt-dlp's "report this issue" text (wrong project).
+        try:
+            return self._download_json(f'{self._API_BASE}/{path}', video_id, note, **kwargs)
+        except ExtractorError as e:
+            if isinstance(e.cause, HTTPError) and e.cause.status == 404:
+                raise ExtractorError('Track not found, private, or removed', expected=True)
+            raise
+
     def _real_extract(self, url):
         user, slug = self._match_valid_url(url).group('user', 'slug')
         slug = slug.lower()
         canonical = self._canonical_url(user, slug)
-        oembed = self._download_json(
-            f'{self._API_BASE}/oembed', slug, 'Downloading oEmbed JSON', query={'url': canonical})
+        oembed = self._call_api('oembed', slug, 'Downloading oEmbed JSON', query={'url': canonical})
         track_id = self._search_regex(
-            r'/embed/audio/(\d+)', traverse_obj(oembed, ('iframe_url', {str})) or '', 'track id')
-        data = self._download_json(f'{self._API_BASE}/audio/{track_id}', track_id, 'Downloading track JSON')
+            r'/embed/audio/(\d+)', traverse_obj(oembed, ('iframe_url', {str})) or '', 'track id',
+            fatal=False)
+        if not track_id:
+            raise ExtractorError('oEmbed returned no embed URL for this track', expected=True)
+        data = self._call_api(f'audio/{track_id}', track_id, 'Downloading track JSON')
         returned_id = traverse_obj(data, ('id', {str}))
         if returned_id and returned_id != track_id:
             raise ExtractorError(f'API returned track {returned_id}, expected {track_id}')

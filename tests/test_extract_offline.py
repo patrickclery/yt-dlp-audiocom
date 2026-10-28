@@ -1,8 +1,13 @@
 """Offline extraction against recorded fixtures: requests, formats, selection, EXTR-02 edges."""
+import io
+
 import pytest
+from yt_dlp.networking import Response
+from yt_dlp.networking.exceptions import HTTPError
 from yt_dlp.utils import ExtractorError
 
-from conftest import FIXTURE_PATHS, REFERENCE_ID, load_fixture, patch_api, run_extract
+from conftest import API, FIXTURE_PATHS, REFERENCE_ID, load_fixture, patch_api, run_extract
+from yt_dlp_plugins.extractor.audiocom import AudioComIE
 
 # Highest-bitrate format per fixture (context table "best" column, D-07).
 BEST = {
@@ -100,13 +105,36 @@ def test_mutation_ext_ignores_url_path(monkeypatch):
 def test_edge_empty_oembed(monkeypatch):
     data = _reference()
     patch_api(monkeypatch, {}, data['audio'])
-    _raises_extractor_error(data['url'])
+    assert _raises_extractor_error(data['url']).expected is True
 
 
 def test_edge_iframe_url_without_digits(monkeypatch):
     data = _reference()
     patch_api(monkeypatch, {'iframe_url': 'https://audio.com/embed/audio/abc'}, data['audio'])
-    _raises_extractor_error(data['url'])
+    assert _raises_extractor_error(data['url']).expected is True
+
+
+def _patch_404(monkeypatch, failing_url):
+    data = _reference()
+    patch_api(monkeypatch, data['oembed'], data['audio'])
+    served = AudioComIE._download_json
+
+    def fake(self, url_or_request, video_id, *args, **kwargs):
+        if url_or_request == failing_url:
+            response = Response(io.BytesIO(b''), url_or_request, {}, status=404)
+            raise ExtractorError('HTTP Error 404: Not Found', cause=HTTPError(response))
+        return served(self, url_or_request, video_id, *args, **kwargs)
+
+    monkeypatch.setattr(AudioComIE, '_download_json', fake)
+    return data
+
+
+@pytest.mark.parametrize('failing_url', [f'{API}/oembed', f'{API}/audio/{REFERENCE_ID}'])
+def test_edge_404_is_expected_error(monkeypatch, failing_url):
+    data = _patch_404(monkeypatch, failing_url)
+    err = _raises_extractor_error(data['url'])
+    assert err.expected is True
+    assert 'report this issue' not in str(err)
 
 
 def test_edge_no_transcodings(monkeypatch):
