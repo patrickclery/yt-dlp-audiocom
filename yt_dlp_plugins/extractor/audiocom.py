@@ -22,6 +22,17 @@ class AudioComIE(InfoExtractor):
             'ext': 'm4a',
             'display_id': 'rusted-pitchfork-dana-liske-uncut-version-astrayal-best',
             'title': 'Rusted Pitchfork — Dana Liske (Uncut Version) - Astrayal best',
+            'uploader': 'David Oliveira',
+            'uploader_id': 'david-oliveira-1877766671108274',
+            'uploader_url': 'https://audio.com/david-oliveira-1877766671108274',
+            'duration': 186.358,
+            'timestamp': 1790777856,
+            'upload_date': '20260930',
+            'tags': 'count:5',
+            'view_count': int,
+            'like_count': int,
+            'comment_count': int,
+            'repost_count': int,
         },
     }, {
         'url': 'https://www.audio.com/David-Oliveira-1877766671108274/audio/rusted-pitchfork-dana-liske-uncut-version-astrayal-best/?utm_source=share',
@@ -69,9 +80,31 @@ class AudioComIE(InfoExtractor):
         if not formats:
             raise ExtractorError('No playable transcodings found', expected=True)
 
+        # author_name is '' on some tracks; fall back to the username (D-11).
+        username = traverse_obj(data, ('username', {str}, filter)) or user.lower()
+        # Cover art, else the uploader avatar (D-11).
+        thumbnail = traverse_obj(data, ('image', {url_or_none})) or traverse_obj(data, ('avatar', {url_or_none}))
+
         return {
             'id': track_id,
             'display_id': slug,
-            'title': traverse_obj(data, ('title', {str})),
+            'uploader': traverse_obj(data, ('author_name', {str}, filter)) or username,
+            'uploader_id': username,
+            'uploader_url': f'https://audio.com/{username}',
+            **({'thumbnail': thumbnail} if thumbnail else {}),
+            # /audio/<id> has no top-level duration or created: duration is the
+            # first transcoding's, in ms, and timestamp is date_created (D-10).
+            # upload_date is left to yt-dlp, which derives it from timestamp.
+            **traverse_obj(data, {
+                'title': ('title', {str}),
+                'description': ('description', {str}, filter),
+                'timestamp': ('date_created', {int_or_none}),
+                'duration': ('transcodings', 0, 'duration', {lambda x: float_or_none(x, 1000)}),
+                'tags': ('tags', ..., {str}, filter, all, filter),
+                'view_count': ('stats', 'plays_count', {int_or_none}),
+                'like_count': ('stats', 'likes_count', {int_or_none}),
+                'comment_count': ('stats', 'comments_count', {int_or_none}),
+                'repost_count': ('stats', 'shares_count', {int_or_none}),
+            }),
             'formats': formats,
         }
