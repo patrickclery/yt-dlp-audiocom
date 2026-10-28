@@ -1,10 +1,18 @@
-"""Offline test helpers: recorded fixtures replace AudioComIE._download_json (RESEARCH Pattern 1)."""
+"""Offline test helpers: recorded fixtures replace AudioComIE._download_json (RESEARCH Pattern 1).
+
+The original-upload probe (_is_valid_url -> _request_webpage) is a second network
+path, so the autouse `probe` fixture stubs it for every test (RESEARCH Pattern 3).
+"""
 import copy
+import io
 import json
 import pathlib
 
 import pytest
 from yt_dlp import YoutubeDL
+from yt_dlp.networking import Response
+from yt_dlp.networking.exceptions import HTTPError
+from yt_dlp.utils import ExtractorError
 
 from yt_dlp_plugins.extractor.audiocom import AudioComIE
 
@@ -71,11 +79,48 @@ def fx(request, monkeypatch):
     yield data, calls
 
 
-def run_extract(url):
-    """Return (info, processed): the extractor's raw result and yt-dlp's processed copy."""
-    with YoutubeDL({'quiet': True, 'no_warnings': True}) as ydl:
-        info = AudioComIE(ydl).extract(url)
+class _Probe:
+    """Record of the stubbed probe: `calls` lists (url, headers, kwargs) per request."""
+
+    def __init__(self):
+        self.calls = []
+        self.reachable = True
+
+
+@pytest.fixture(autouse=True)
+def probe(monkeypatch):
+    """Stub AudioComIE._request_webpage so no test can reach S3; never does I/O.
+
+    While `probe.reachable` is True (default) the request succeeds; set it to
+    False to make it fail like a missing S3 object (HTTP 404).
+    """
+    state = _Probe()
+
+    def fake(self, url_or_request, video_id, *args, headers=None, **kwargs):
+        state.calls.append((url_or_request, headers, kwargs))
+        if not state.reachable:
+            response = Response(io.BytesIO(b''), url_or_request, {}, status=404, reason='Not Found')
+            raise ExtractorError('HTTP Error 404: Not Found', cause=HTTPError(response))
+        return object()  # stand-in response; _is_valid_url only needs no exception
+
+    monkeypatch.setattr(AudioComIE, '_request_webpage', fake)
+    return state
+
+
+def run_extract(url, params=None):
+    """Return (info, processed): the extractor's raw result and yt-dlp's processed copy.
+
+    `params` (e.g. {'format': 'original'} or {'format_sort': ['abr']}) is merged into
+    the YoutubeDL options, mirroring -f and -S.
+    """
+    with YoutubeDL({'quiet': True, 'no_warnings': True, **(params or {})}) as ydl:
+        ie = AudioComIE(ydl)
+        info = ie.extract(url)
         # Deep copy: processing fills format fields in place (e.g. ext from the URL
-        # path), which would mask what the extractor itself returned.
-        processed = ydl.process_ie_result(copy.deepcopy(info), download=False)
+        # path), which would mask what the extractor itself returned. The extra info
+        # (extractor, webpage_url, ...) is what extract_info adds; yt-dlp's
+        # "Requested format is not available" path needs it.
+        processed = copy.deepcopy(info)
+        ydl.add_default_extra_info(processed, ie, url)
+        processed = ydl.process_ie_result(processed, download=False)
     return info, processed
