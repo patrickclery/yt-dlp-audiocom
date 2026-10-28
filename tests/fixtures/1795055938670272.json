@@ -1,0 +1,42 @@
+{
+ "audio": {
+  "author_name": "Beards and Banter Podcast",
+  "avatar": "",
+  "date_created": 1711898745,
+  "description": "",
+  "id": "1795055938670272",
+  "image": "",
+  "stats": {
+   "comments_count": 0,
+   "likes_count": 0,
+   "plays_count": 3,
+   "shares_count": 0
+  },
+  "tags": [
+   "speech",
+   "inside",
+   "small room",
+   "electric shaver",
+   "electric razor"
+  ],
+  "title": "episode5 REUPLOADED AUDIO",
+  "transcodings": [
+   {
+    "bit_rate": 320000,
+    "channels": 2,
+    "codec": "mp3",
+    "duration": 4211644,
+    "format": "mp3",
+    "sample_rate": 44100,
+    "size": 168466852,
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/72/02/1795055938670272-1795055941046539-1795056172861527.mp3"
+   }
+  ],
+  "username": "beards-and-banter-podcast"
+ },
+ "oembed": {
+  "iframe_url": "https://audio.com/embed/audio/1795055938670272"
+ },
+ "url": "https://audio.com/beards-and-banter-podcast/audio/episode5-reuploaded-audio"
+}

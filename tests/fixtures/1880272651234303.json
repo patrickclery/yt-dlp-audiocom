@@ -1,0 +1,52 @@
+{
+ "audio": {
+  "author_name": "SHIVGAS",
+  "avatar": "https://audio.com/s3w/audio.com.static/user/avatar/42/39/1856004259593942.jpeg",
+  "date_created": 1793167735,
+  "description": "Preparing bhog and festive meals requires careful attention to cooking safety. Discover essential tips for handling Commercial LPG, checking gas connections, maintaining proper ventilation, and keeping flammable decorations away from cooking appliances. Follow these simple precautions to create a safer puja cooking environment for your family, guests, and cooking staff.",
+  "id": "1880272651234303",
+  "image": "https://audio.com/s3w/audio.com.static/user/avatar/42/39/1856004259593942.jpeg",
+  "stats": {
+   "comments_count": 0,
+   "likes_count": 0,
+   "plays_count": 0,
+   "shares_count": 0
+  },
+  "tags": [
+   "nonmusic",
+   "speech",
+   "narration",
+   "gas"
+  ],
+  "title": "Puja Cooking Safety Tips: Handle Commercial LPG with Care",
+  "transcodings": [
+   {
+    "bit_rate": 160000,
+    "channels": 2,
+    "codec": "mp3",
+    "duration": 189675,
+    "format": "mp3",
+    "sample_rate": 22050,
+    "size": 3794024,
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/03/43/1880272651234303-1880272651281285-1880272655476509.mp3"
+   },
+   {
+    "bit_rate": 111600,
+    "channels": 2,
+    "codec": "aac",
+    "duration": 189606,
+    "format": "m4a",
+    "sample_rate": 22050,
+    "size": 2662850,
+    "type": "audio/m4a",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/03/43/1880272651234303-1880272651281285-1880272655495749.m4a"
+   }
+  ],
+  "username": "shivgas"
+ },
+ "oembed": {
+  "iframe_url": "https://audio.com/embed/audio/1880272651234303"
+ },
+ "url": "https://audio.com/shivgas/audio/festivals-and-pujas-bring-people-together-through-prayers"
+}

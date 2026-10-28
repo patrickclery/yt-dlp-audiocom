@@ -1,0 +1,53 @@
+{
+ "audio": {
+  "author_name": "Arthur Hpcp",
+  "avatar": "",
+  "date_created": 1775334579,
+  "description": "",
+  "id": "1861573231849291",
+  "image": "",
+  "stats": {
+   "comments_count": 0,
+   "likes_count": 0,
+   "plays_count": 0,
+   "shares_count": 0
+  },
+  "tags": [
+   "animal",
+   "silence",
+   "speech",
+   "domestic animals",
+   "pets"
+  ],
+  "title": "Original",
+  "transcodings": [
+   {
+    "bit_rate": 160000,
+    "channels": 2,
+    "codec": "mp3",
+    "duration": 2335644,
+    "format": "mp3",
+    "sample_rate": 16000,
+    "size": 46713600,
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/91/92/1861573231849291-1861573231983612-1861573233182562.mp3"
+   },
+   {
+    "bit_rate": 8946,
+    "channels": 2,
+    "codec": "aac",
+    "duration": 2335548,
+    "format": "m4a",
+    "sample_rate": 16000,
+    "size": 2758633,
+    "type": "audio/m4a",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/91/92/1861573231849291-1861573231983612-1861573233711976.m4a"
+   }
+  ],
+  "username": "arthur-hpcp"
+ },
+ "oembed": {
+  "iframe_url": "https://audio.com/embed/audio/1861573231849291"
+ },
+ "url": "https://audio.com/arthur-hpcp/audio/original"
+}
