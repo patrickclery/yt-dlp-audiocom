@@ -30,8 +30,11 @@
 #   Options combine, e.g. --force --smoke audio or --check --smoke video.
 #
 # Env:
-#   AUDIOCOM_INSTALL_PATH  installed plugin file
-#                          (default /opt/metube/plugins/yt_dlp_plugins/extractor/audiocom.py)
+#   AUDIOCOM_INSTALL_PATH  installed plugin file, <plugin dir>/yt_dlp_plugins/extractor/audiocom.py
+#                          (default /opt/metube/plugins/yt_dlp_plugins/extractor/audiocom.py).
+#                          The __init__.py and rumble_fix.py checks follow its
+#                          plugin dir, and the file the container sees under
+#                          /plugins must still match the repo.
 #   METUBE_URL             MeTube's HTTP address (default http://127.0.0.1:8085)
 #   METUBE_DOWNLOADS       host path of MeTube's download folder
 #                          (default /tank/docker/metube/downloads)
@@ -46,7 +49,9 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)
 SRC="$ROOT/yt_dlp_plugins/extractor/audiocom.py"
 DEST=${AUDIOCOM_INSTALL_PATH:-/opt/metube/plugins/yt_dlp_plugins/extractor/audiocom.py}
-PLUGINS_DIR=/opt/metube/plugins
+PLUGINS_DIR=${DEST%/yt_dlp_plugins/extractor/audiocom.py}
+# The same file as seen inside the container (/opt/metube/plugins:/plugins:ro).
+IN_CONTAINER=/plugins/yt_dlp_plugins/extractor/audiocom.py
 RUMBLE="$PLUGINS_DIR/yt_dlp_plugins/extractor/rumble_fix.py"
 METUBE_URL=${METUBE_URL:-http://127.0.0.1:8085}
 METUBE_URL=${METUBE_URL%/}
@@ -94,6 +99,10 @@ done
 DRAIN_TIMEOUT=${AUDIOCOM_DRAIN_TIMEOUT:-300}
 if [[ ! "$DRAIN_TIMEOUT" =~ ^[0-9]+$ ]]; then
   echo "AUDIOCOM_DRAIN_TIMEOUT must be a whole number of seconds" >&2; exit 2
+fi
+
+if [[ "$PLUGINS_DIR" == "$DEST" || -z "$PLUGINS_DIR" ]]; then
+  echo "AUDIOCOM_INSTALL_PATH must end in /yt_dlp_plugins/extractor/audiocom.py" >&2; exit 2
 fi
 
 marker=''
@@ -235,6 +244,15 @@ if [[ -z "$ver" ]]; then
   die
 fi
 echo "ok: MeTube answering (yt-dlp $ver)"
+
+# The file yt-dlp loads inside the container is this repo's file. Step 1 checked
+# the host path; this catches an install path the container does not mount.
+in_sha=$(docker exec "$CONTAINER" sha256sum "$IN_CONTAINER" 2>/dev/null || true)
+if [[ -n "$in_sha" && "${in_sha%% *}" == "${sha%% *}" ]]; then
+  echo "ok: container sees the repo plugin at $IN_CONTAINER"
+else
+  echo "FAIL: $IN_CONTAINER inside $CONTAINER is missing or differs from $SRC"; fail=1
+fi
 
 # 6) yt-dlp inside MeTube lists AudioComIE once, next to the Rumble plugins,
 # and no plugin failed to import.
