@@ -45,8 +45,9 @@ TARGETS=(  # venv  yt-dlp version (= zero-padded git tag)  tag commit
 # under pipefail, because grep exits at the first match, the writer then dies of
 # SIGPIPE and the pipeline reports a failure even though the text was there.
 
-redact() {  # strip query strings (presign parameters) from any URL in the input
-  sed -E 's#(https?://[^[:space:]?]*)\?[^[:space:]]*#\1?<redacted>#g'
+redact() {  # strip query strings (presign parameters) from any URL or bare path
+  # Bare paths too: urllib3 errors quote the scheme-less form "with url: /path?X-Amz-...".
+  sed -E 's#(/[^[:space:]?]*)\?[^[:space:]]*#\1?<redacted>#g'
 }
 
 work=''
@@ -170,7 +171,7 @@ for t in "${TARGETS[@]}"; do
     echo "ok: non-downloadable track lists no original"
   else
     printf '%s\n' "$out" | redact
-    echo "FAIL: non-downloadable track (yt-dlp exit $rc, format ids: $out; need mp3 and no original)"; fail=1
+    echo "FAIL: non-downloadable track (yt-dlp exit $rc; need mp3 and no original)"; fail=1
   fi
 
   rm -rf "$work"
