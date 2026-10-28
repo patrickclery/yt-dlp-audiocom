@@ -69,8 +69,10 @@ harness() {  # $1=tag $2=sha; the harness root is $CACHE/$1
     fi
   fi
   # Never re-use or patch a checkout that is not exactly the pinned tag commit.
+  # --ignored: yt-dlp's .gitignore hides test/local_parameters.json (merged into
+  # the harness params by test/helper.py) and stale bytecode; neither may exist.
   head=$(git -C "$dir" rev-parse HEAD 2>/dev/null || true)
-  status=$(git -C "$dir" status --porcelain 2>/dev/null || echo 'status failed')
+  status=$(git -C "$dir" status --porcelain --ignored 2>/dev/null || echo 'status failed')
   if [[ "$head" != "$2" ]] || ! git -C "$dir" diff --quiet HEAD 2>/dev/null \
       || [[ -n "$status" ]] || [[ -e "$dir/yt_dlp" ]]; then
     echo "FAIL: harness $1 is not a clean checkout of $2 (delete $dir to re-fetch)"
@@ -124,8 +126,10 @@ for t in "${TARGETS[@]}"; do
   work=$(mktemp -d)
 
   # 6) PLUG-03: _TESTS through yt-dlp's own harness, from a fresh writable cwd.
+  # No bytecode, so the cached harness stays a clean checkout for the next run.
   if [[ "$harness_ok" -eq 1 ]]; then
-    out=$(cd "$work" && "$py" "$ROOT/scripts/run_live_tests.py" "$dir" AudioCom 2>&1) && rc=0 || rc=$?
+    out=$(cd "$work" && PYTHONDONTWRITEBYTECODE=1 "$py" "$ROOT/scripts/run_live_tests.py" "$dir" AudioCom 2>&1) \
+      && rc=0 || rc=$?
     printf '%s\n' "$out" | redact
     passed=0
     if [[ "$out" =~ ([0-9]+)\ passed ]]; then passed=${BASH_REMATCH[1]}; fi

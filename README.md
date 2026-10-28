@@ -48,8 +48,9 @@ each target, always in this order (`.venv` = 2026.10.26, then `.venv-metube` =
 2. `yt_dlp.version.__version__` equals the pinned version (`ok: yt-dlp <version>`).
 3. That version's own test harness: a sparse checkout of only `test/` from
    yt-dlp at the matching zero-padded tag. It must be exactly the pinned tag
-   commit, with no modified or extra files and no `yt_dlp/` directory, or the
-   script refuses it (`ok: harness <tag> at <sha>`).
+   commit, with no modified or extra files (gitignored ones such as
+   `test/local_parameters.json` or `__pycache__/` included) and no `yt_dlp/`
+   directory, or the script refuses it (`ok: harness <tag> at <sha>`).
 4. The offline suite passes on this version (`ok: offline suite`).
 5. `yt-dlp -v` lists `AudioComIE` under `Extractor Plugins:` with no import error
    (`ok: plugin listed`).
