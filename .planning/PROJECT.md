@@ -12,14 +12,11 @@ Pasting an audio.com track URL into MeTube (or `yt-dlp`) downloads the audio fil
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ yt-dlp plugin downloads audio.com single tracks (mp3/m4a, highest bitrate) with metadata, no impersonation — Phase 1
+- ✓ Works on yt-dlp 2026.8.19 (MeTube) and 2026.10.26 — Phase 1
 
 ### Active
 
-- [ ] yt-dlp extractor recognizes audio.com single-track URLs and extracts the audio stream
-- [ ] Extracts metadata: title, uploader, duration, thumbnail, description where available
-- [ ] Avoids audio.com's Cloudflare page challenge by using oEmbed + public API (no impersonation)
-- [ ] Extractor follows yt-dlp code conventions (`_TESTS`, `traverse_obj`, ruff)
 - [ ] Same code packaged as a yt-dlp plugin mounted into the existing MeTube Docker container
 
 ### Out of Scope
@@ -49,8 +46,9 @@ Pasting an audio.com track URL into MeTube (or `yt-dlp`) downloads the audio fil
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Build a yt-dlp extractor, not a standalone tool | MeTube is just a yt-dlp front end; an extractor makes both work | — Pending |
-| Plugin only; no agent-built upstream PR | yt-dlp bans AI-authored contributions (research 2026-10-28) | — Pending |
-| oEmbed → api.audio.com/audio/<id> data path | API host isn't behind Cloudflare; prototype downloaded reference track | — Pending |
+| Plugin only; no agent-built upstream PR | yt-dlp bans AI-authored contributions (research 2026-10-28) | ✓ Good |
+| oEmbed → api.audio.com/audio/<id> data path | API host isn't behind Cloudflare; prototype downloaded reference track | ✓ Good |
+| Highest bitrate wins (quality = abr) | Codec-order default picked a 9 kbps m4a over 160 kbps mp3 | ✓ Good |
 | Single tracks only for v1 | Use case is occasional personal saves | — Pending |
 
 ## Evolution
@@ -71,4 +69,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-28 after research (no prior art found; upstream AI policy)*
+*Last updated: 2026-10-28 after Phase 1*
