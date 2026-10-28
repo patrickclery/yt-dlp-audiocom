@@ -12,7 +12,7 @@ Three phases take this from nothing to a working MeTube download. Phase 1 sets u
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Track Downloads via yt-dlp** - Plugin repo, recorded fixtures from 5+ tracks, and an `AudioComIE` that downloads mp3/m4a with correct metadata
+- [x] **Phase 1: Track Downloads via yt-dlp** - Plugin repo, recorded fixtures from 5+ tracks, and an `AudioComIE` that downloads mp3/m4a with correct metadata (completed 2026-10-28)
 - [ ] **Phase 2: Edge Cases and Version Compatibility** - Originals gated on `is_downloadable`, clean errors, `_TESTS`, and checks on yt-dlp 2026.08.19 and current stable
 - [ ] **Phase 3: MeTube Deploy** - Plugin installed into the MeTube container next to existing plugins, plus README for install, update, and removal
 
@@ -30,14 +30,14 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. `yt-dlp -F` on the reference URL lists mp3 and m4a formats with correct ext, abr, and acodec, and no video codec.
   4. The downloaded file has title, uploader, uploader_id/url, duration in seconds, and upload date. Thumbnail, description, tags, and counts appear only for tracks that have them, checked against redacted fixtures recorded from at least 5 sampled tracks.
 
-**Plans:** 2 plans
+**Plans:** 2/2 plans complete
 
 Plans:
 **Wave 1**
-- [ ] 01-01-PLAN.md — Walking skeleton: package-legitimacy gate, hatchling plugin scaffold plus two pinned venvs, tracer (reference URL → oEmbed → API → m4a), URL variants and negatives
+- [x] 01-01-PLAN.md — Walking skeleton: package-legitimacy gate, hatchling plugin scaffold plus two pinned venvs, tracer (reference URL → oEmbed → API → m4a), URL variants and negatives
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 01-02-PLAN.md — Fixture recorder plus ≥5 redacted fixtures, highest-bitrate format selection, full metadata with uploader/thumbnail fallbacks
+- [x] 01-02-PLAN.md — Fixture recorder plus ≥5 redacted fixtures, highest-bitrate format selection, full metadata with uploader/thumbnail fallbacks
 
 **Research flag**: Sample at least 5 audio.com tracks for fixtures before finalizing the field mapping: `is_downloadable` true and false, with and without artwork, with and without description. Strip signatures and `app.*` config values.
 
@@ -76,6 +76,6 @@ Phases execute in numeric order: 1 → 2 → 3
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Track Downloads via yt-dlp | 0/TBD | Not started | - |
+| 1. Track Downloads via yt-dlp | 2/2 | Complete    | 2026-10-28 |
 | 2. Edge Cases and Version Compatibility | 0/TBD | Not started | - |
 | 3. MeTube Deploy | 0/TBD | Not started | - |

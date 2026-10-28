@@ -7,16 +7,16 @@
 
 ### Extraction
 
-- [ ] **EXTR-01**: User can pass an audio.com single-track URL (`audio.com/<user>/audio/<slug>`, with or without `www.`, trailing slash, or query string) to yt-dlp and it is matched by the `AudioCom` extractor
-- [ ] **EXTR-02**: Extractor resolves the track ID from the slug URL (oEmbed on the canonicalized URL) without needing browser impersonation
-- [ ] **EXTR-03**: User gets mp3 and m4a formats from the track's transcodings, with correct ext/abr/acodec
+- [x] **EXTR-01**: User can pass an audio.com single-track URL (`audio.com/<user>/audio/<slug>`, with or without `www.`, trailing slash, or query string) to yt-dlp and it is matched by the `AudioCom` extractor
+- [x] **EXTR-02**: Extractor resolves the track ID from the slug URL (oEmbed on the canonicalized URL) without needing browser impersonation
+- [x] **EXTR-03**: User gets mp3 and m4a formats from the track's transcodings, with correct ext/abr/acodec
 - [ ] **EXTR-04**: Original upload (`sources`) is offered only when the track is flagged downloadable; never exposed otherwise
-- [ ] **EXTR-05**: Downloaded file carries title, uploader, uploader_id/url, duration (seconds), and upload date; thumbnail, description, tags, and counts are included only when present
+- [x] **EXTR-05**: Downloaded file carries title, uploader, uploader_id/url, duration (seconds), and upload date; thumbnail, description, tags, and counts are included only when present
 - [ ] **EXTR-06**: Unavailable, private, or removed tracks fail with a clear `ExtractorError`, not a stack trace or bare 404
 
 ### Plugin Packaging
 
-- [ ] **PLUG-01**: Repo ships an installable yt-dlp plugin (`yt_dlp_plugins/extractor/audiocom.py`, namespace package, no `__init__.py` in `yt_dlp_plugins`) that loads with absolute imports
+- [x] **PLUG-01**: Repo ships an installable yt-dlp plugin (`yt_dlp_plugins/extractor/audiocom.py`, namespace package, no `__init__.py` in `yt_dlp_plugins`) that loads with absolute imports
 - [ ] **PLUG-02**: `yt-dlp -v` lists the plugin extractor, and it works on both yt-dlp 2026.08.19 (MeTube's bundled) and current stable
 - [ ] **PLUG-03**: Extractor has `_TESTS` covering the reference URL plus at least one other track, and a local test command runs them
 
@@ -46,13 +46,13 @@
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| EXTR-01 | Phase 1 | Pending |
-| EXTR-02 | Phase 1 | Pending |
-| EXTR-03 | Phase 1 | Pending |
+| EXTR-01 | Phase 1 | Complete |
+| EXTR-02 | Phase 1 | Complete |
+| EXTR-03 | Phase 1 | Complete |
 | EXTR-04 | Phase 2 | Pending |
-| EXTR-05 | Phase 1 | Pending |
+| EXTR-05 | Phase 1 | Complete |
 | EXTR-06 | Phase 2 | Pending |
-| PLUG-01 | Phase 1 | Pending |
+| PLUG-01 | Phase 1 | Complete |
 | PLUG-02 | Phase 2 | Pending |
 | PLUG-03 | Phase 2 | Pending |
 | METB-01 | Phase 3 | Pending |

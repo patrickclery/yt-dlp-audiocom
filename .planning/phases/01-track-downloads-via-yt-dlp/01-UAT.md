@@ -1,5 +1,5 @@
 ---
-status: testing
+status: complete
 phase: 01-track-downloads-via-yt-dlp
 source: [01-VERIFICATION.md]
 started: 2026-10-28T17:36:49Z
@@ -18,22 +18,22 @@ awaiting: user response
 
 ### 1. Playback of downloaded reference track
 expected: File plays ~3:06, player shows title "Rusted Pitchfork..." and artist David Oliveira
-result: [pending]
+result: pass
 
 ### 2. Backstop truth: extractor has no mutable state / file I/O
 expected: Accept code-read evidence (no enforcing test)
-result: [pending]
+result: pass
 
 ### 3. Prohibitions without enforcing tests (no upstream code, no committed audio, no ~/.config writes)
 expected: Accept verifier's clean inspection
-result: [pending]
+result: pass
 
 ## Summary
 
 total: 3
-passed: 0
+passed: 3
 issues: 0
-pending: 3
+pending: 0
 skipped: 0
 blocked: 0
 
