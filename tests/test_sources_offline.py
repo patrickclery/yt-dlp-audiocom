@@ -4,6 +4,8 @@ import json
 import pytest
 from yt_dlp.utils import ExtractorError
 
+from yt_dlp import YoutubeDL
+
 from conftest import FIXTURE_PATHS, REFERENCE_ID, load_fixture, patch_api, run_extract
 from test_extract_offline import BEST, BESO_ID
 from yt_dlp_plugins.extractor.audiocom import AudioComIE
@@ -28,6 +30,15 @@ ANDREA_ID = '1880272416485027'
 SHIVGAS_ID = '1880272651234303'
 RANGE = {'Range': 'bytes=0-0'}
 NOT_AVAILABLE = 'Requested format is not available'
+# Names the original, so it is listed; falls back to ba where there is none.
+OPT_IN = {'format': 'original/ba'}
+# Selectors that do not name the original (WR-01: worst/wa used to pick it).
+GENERIC = {
+    'default': {}, 'f-ba': {'format': 'ba'}, 'S-abr': {'format_sort': ['abr']},
+    'S-size': {'format_sort': ['size']}, 'f-worst': {'format': 'worst'}, 'f-w': {'format': 'w'},
+    'f-wa': {'format': 'wa'}, 'f-worstaudio': {'format': 'worstaudio'}, 'f-w-star': {'format': 'w*'},
+    'f-ba-ext-wav': {'format': 'ba[ext=wav]'}, 'f-wav': {'format': 'wav'},
+}
 
 
 def _current_source(audio):
@@ -49,7 +60,7 @@ def _skips(messages):
     return [m for m in messages if m.startswith('Skipping original upload')]
 
 
-def _extract(monkeypatch, data, params=None):
+def _extract(monkeypatch, data, params=OPT_IN):
     patch_api(monkeypatch, data['oembed'], data['audio'])
     return run_extract(data['url'], params)
 
@@ -67,7 +78,7 @@ def test_original_table_matches_fixtures():
 def test_original_only_when_downloadable(fx, probe):
     data, _ = fx
     audio = data['audio']
-    info, _ = run_extract(data['url'])
+    info, _ = run_extract(data['url'], OPT_IN)
     originals = _originals(info)
     expected = ORIGINAL[audio['id']]
     assert len(originals) == (expected is not None)
@@ -85,7 +96,7 @@ def test_original_only_when_downloadable(fx, probe):
 def test_probe_only_for_downloadable(fx, probe):
     data, _ = fx
     audio = data['audio']
-    run_extract(data['url'])
+    run_extract(data['url'], OPT_IN)
     if ORIGINAL[audio['id']] is None:
         assert probe.calls == []
         return
@@ -108,16 +119,65 @@ def test_no_source_url_leaks_when_not_downloadable(fx):
         assert source['url'] not in dumped
 
 
-@pytest.mark.parametrize('params', [{}, {'format': 'ba'}, {'format_sort': ['abr']}, {'format_sort': ['size']}],
-                         ids=['default', 'f-ba', 'S-abr', 'S-size'])
-def test_original_never_selected_by_default_or_ranking(fx, params):
+@pytest.mark.parametrize('params', list(GENERIC.values()), ids=list(GENERIC))
+def test_generic_selectors_never_reach_original(fx, probe, params):
+    # WR-01: a selector that does not name the original never sees it listed, so
+    # worst/wa cannot pick it; no S3 request is made either.
     data, _ = fx
     if ORIGINAL[data['audio']['id']] is None:
         pytest.skip('no original on this fixture')
-    _, processed = run_extract(data['url'], params)
+    try:
+        info, processed = run_extract(data['url'], params)
+    except ExtractorError as e:  # e.g. -f wav on a track without a wav transcoding
+        assert NOT_AVAILABLE in str(e)
+        return
+    assert _originals(info) == []
+    assert probe.calls == []
     assert processed['format_id'] != 'original'
     if not params:
         assert processed['format_id'] == BEST[data['audio']['id']]
+
+
+@pytest.mark.parametrize('params', [
+    {'format': 'b/original'}, {'format': 'ba/original'},
+    {'format': 'ba/original', 'format_sort': ['abr']}, {'format': 'ba/original', 'format_sort': ['size']},
+], ids=['b', 'f-ba', 'S-abr', 'S-size'])
+def test_listed_original_never_selected_by_default_or_ranking(fx, params):
+    # Once listed (the spec names it), the sort still never ranks it first.
+    data, _ = fx
+    if ORIGINAL[data['audio']['id']] is None:
+        pytest.skip('no original on this fixture')
+    info, processed = run_extract(data['url'], params)
+    assert len(_originals(info)) == 1
+    assert processed['format_id'] != 'original'
+    if 'format_sort' not in params:
+        assert processed['format_id'] == BEST[data['audio']['id']]
+
+
+def test_list_formats_lists_original(fx):
+    data, _ = fx
+    info, _ = run_extract(data['url'], {'listformats': True})
+    assert len(_originals(info)) == (ORIGINAL[data['audio']['id']] is not None)
+
+
+@pytest.mark.parametrize('spec, expected', [
+    ('original', True), ('original/ba', True), ('ba/original', True), ('[format_id=original]', True),
+    ('-', True), (None, False), ('ba', False), ('worst', False), ('wa', False), ('originals', False),
+    ('mp3-original', False), ('original-wav', False),
+])
+def test_original_requested_matches_format_spec(spec, expected):
+    with YoutubeDL({'quiet': True, 'format': spec}) as ydl:
+        assert AudioComIE(ydl)._original_requested() is expected
+
+
+def test_original_requested_ignores_callable_selector():
+    with YoutubeDL({'quiet': True, 'format': lambda ctx: iter(())}) as ydl:
+        assert AudioComIE(ydl)._original_requested() is False
+
+
+def test_original_requested_for_list_formats():
+    with YoutubeDL({'quiet': True, 'listformats': True}) as ydl:
+        assert AudioComIE(ydl)._original_requested() is True
 
 
 def test_f_original_selects_original_or_is_unavailable(fx):

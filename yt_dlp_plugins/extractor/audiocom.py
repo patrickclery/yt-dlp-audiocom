@@ -5,6 +5,8 @@
 #
 # yt-dlp imports every plugin on every run, so this module does no work at
 # import time: only imports and the class definition live at the top level.
+import re
+
 from yt_dlp.extractor.common import InfoExtractor
 from yt_dlp.networking.exceptions import HTTPError
 from yt_dlp.utils import (
@@ -83,6 +85,17 @@ class AudioComIE(InfoExtractor):
             mimetype2ext(traverse_obj(obj, ('type', {str}))),
         ) if e in KNOWN_EXTENSIONS), None)
 
+    def _original_requested(self):
+        # The original is listed only when asked for: by name in -f (-f original,
+        # -f original/ba, ...), for -F, or for interactive -f -. A generic selector
+        # (worst, wa, ba[ext=wav], ...) then never sees it, and a plain download makes
+        # no S3 request. Pluralsight narrows its formats on -f / -F the same way.
+        if self.get_param('listformats'):
+            return True
+        spec = self.get_param('format')
+        return isinstance(spec, str) and (
+            spec == '-' or re.search(r'(?<![\w-])original(?![\w-])', spec) is not None)
+
     def _call_api(self, path, video_id, note, **kwargs):
         # A missing or restricted track is a user-side condition, not a bug, so the
         # error is expected: one line, no traceback and no "report this issue" text
@@ -157,7 +170,8 @@ class AudioComIE(InfoExtractor):
         # the uploader allows downloads. Signed source URLs download without auth
         # even when downloads are disallowed, so this check is the only control:
         # only the literal True opens it, and no source URL is touched otherwise.
-        if data.get('is_downloadable') is True and url_or_none(traverse_obj(current, 'url')):
+        if (data.get('is_downloadable') is True and self._original_requested()
+                and url_or_none(traverse_obj(current, 'url'))):
             ext = self._known_ext(current)
             if not ext:
                 # e.g. WavPack ('wv'): yt-dlp refuses the extension at download time.
@@ -174,8 +188,8 @@ class AudioComIE(InfoExtractor):
                     'format_note': 'original upload',
                     'ext': ext,
                     'vcodec': 'none',
-                    # ie_pref outranks every sort field, so neither the default sort
-                    # nor a user -S can pick the original. No quality on purpose.
+                    # When listed (-F, or -f original/ba), ie_pref outranks every sort
+                    # field, so neither the default sort nor -S picks it. No quality.
                     'preference': -10,
                     **({} if converted else traverse_obj(current, {
                         'acodec': ('codec', {str}),

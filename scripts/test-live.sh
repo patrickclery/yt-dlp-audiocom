@@ -162,8 +162,10 @@ for t in "${TARGETS[@]}"; do
   # jasa-sisemore is the meaningful negative: its source is a plain wav, which
   # would pass the extension accept-list and the probe, so only the
   # is_downloadable gate keeps it out. The reference's WavPack source would be
-  # rejected by the extension check anyway. Prints format ids only, never URLs.
-  out=$("$ytdlp" --ignore-config --simulate --print '%(formats.:.format_id)j' "$NODL_URL" 2>&1) && rc=0 || rc=$?
+  # rejected by the extension check anyway. -f names the original so that it is
+  # requested (it is never listed otherwise); ba is the fallback. Prints format
+  # ids only, never URLs.
+  out=$("$ytdlp" --ignore-config --simulate -f 'original/ba' --print '%(formats.:.format_id)j' "$NODL_URL" 2>&1) && rc=0 || rc=$?
   if [[ "$rc" -eq 0 && "$out" == *'"mp3"'* && "$out" != *original* ]]; then
     echo "ok: non-downloadable track lists no original"
   else

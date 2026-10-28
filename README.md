@@ -92,8 +92,11 @@ When the uploader allows downloads, the track also offers the file they uploaded
 yt-dlp -f original 'https://audio.com/<user>/audio/<slug>'
 ```
 
-- It is opt-in only. The default selection, `-f ba` and any `-S` sort keep
-  choosing the best transcoding (mp3 or m4a).
+- It is opt-in only. It is listed only when the `-f` spec names `original`
+  (`-f original`, `-f original/ba`), and for `-F`. Every other selector
+  (the default, `-f ba`, `-f worst`, `-f wa`, `-f 'ba[ext=wav]'`, any `-S` sort)
+  never sees it and keeps choosing a transcoding (mp3 or m4a). For the same
+  reason `-j` does not include it unless `-f` names it.
 - WavPack originals are not offered, because yt-dlp rejects the `wv` extension.
 - An original that audio.com no longer serves is skipped with a one-line note
   (`<id>: original upload URL is invalid, skipping: HTTP Error 404: Not Found`).
