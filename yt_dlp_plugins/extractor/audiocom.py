@@ -7,7 +7,14 @@
 # import time: only imports and the class definition live at the top level.
 from yt_dlp.extractor.common import InfoExtractor
 from yt_dlp.networking.exceptions import HTTPError
-from yt_dlp.utils import ExtractorError, float_or_none, int_or_none, mimetype2ext, url_or_none
+from yt_dlp.utils import (
+    KNOWN_EXTENSIONS,
+    ExtractorError,
+    float_or_none,
+    int_or_none,
+    mimetype2ext,
+    url_or_none,
+)
 from yt_dlp.utils.traversal import traverse_obj
 
 
@@ -73,7 +80,13 @@ class AudioComIE(InfoExtractor):
 
         formats = []
         for t in traverse_obj(data, ('transcodings', lambda _, v: url_or_none(v['url']))):
-            ext = traverse_obj(t, ('format', {str}, filter)) or mimetype2ext(traverse_obj(t, ('type', {str})))
+            # The API format label is only trusted if it is a known extension;
+            # anything else (e.g. 'm4a_hq') falls back to the MIME type, so an
+            # unusual label cannot reach the filename and fail at download time.
+            ext = next((e for e in (
+                traverse_obj(t, ('format', {str}, {str.lower})),
+                mimetype2ext(traverse_obj(t, ('type', {str}))),
+            ) if e in KNOWN_EXTENSIONS), None)
             abr = traverse_obj(t, ('bit_rate', {lambda x: float_or_none(x, 1000)}))
             formats.append({
                 'url': t['url'],

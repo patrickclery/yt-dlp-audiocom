@@ -93,6 +93,26 @@ def test_mutation_ext_from_mime_when_format_missing(monkeypatch):
     assert sorted(f['ext'] for f in info['formats']) == ['m4a', 'mp3']
 
 
+@pytest.mark.parametrize(('label', 'expected'), [('M4A', 'm4a'), ('m4a_hq', 'm4a'), ('', 'm4a')])
+def test_mutation_unknown_format_label_falls_back_to_mime(monkeypatch, label, expected):
+    data = _reference()
+    _m4a(data['audio'])['format'] = label
+    patch_api(monkeypatch, data['oembed'], data['audio'])
+    info, processed = run_extract(data['url'])
+    assert sorted(f['ext'] for f in info['formats']) == sorted(['mp3', expected])
+    assert sorted(f['ext'] for f in processed['formats']) == sorted(['mp3', expected])
+
+
+def test_mutation_unknown_format_label_without_mime_is_dropped_from_ext(monkeypatch):
+    data = _reference()
+    m4a = _m4a(data['audio'])
+    m4a['format'] = 'm4a_hq'
+    del m4a['type']
+    patch_api(monkeypatch, data['oembed'], data['audio'])
+    info, _ = run_extract(data['url'])
+    assert 'm4a_hq' not in [f['ext'] for f in info['formats']]
+
+
 def test_mutation_ext_ignores_url_path(monkeypatch):
     data = _reference()
     m4a = _m4a(data['audio'])
