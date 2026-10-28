@@ -53,7 +53,17 @@ Plans:
   3. One documented local command runs the extractor's `_TESTS` (the reference URL plus at least one other track), and it passes.
   4. That test command and a real download both pass on yt-dlp 2026.08.19 and on current stable.
 
-**Plans**: TBD
+**Plans:** 3 plans
+
+Plans:
+**Wave 1**
+- [ ] 02-01-PLAN.md — Tracer: `scripts/test-live.sh` runs `_TESTS` (reference + jasa-sisemore) through yt-dlp's pinned harness, plus a real download, on both versions; one-line errors for missing/private tracks
+
+**Wave 2** *(blocked on Wave 1 completion)*
+- [ ] 02-02-PLAN.md — Recorder and 12 fixtures gain is_downloadable/sources (no signed URLs); re-uploaded tracks use only the current upload's formats and duration
+
+**Wave 3** *(blocked on Wave 2 completion)*
+- [ ] 02-03-PLAN.md — Opt-in `-f original` only when is_downloadable is True (wv skipped, Range-probed); live negative in test-live.sh; README section
 **Research flag**: How private and unlisted tracks behave is unknown. Probe these cases and map each one to `ExtractorError(expected=True)`.
 
 ### Phase 3: MeTube Deploy
@@ -77,5 +87,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Track Downloads via yt-dlp | 2/2 | Complete    | 2026-10-28 |
-| 2. Edge Cases and Version Compatibility | 0/TBD | Not started | - |
+| 2. Edge Cases and Version Compatibility | 0/3 | Planned | - |
 | 3. MeTube Deploy | 0/TBD | Not started | - |
