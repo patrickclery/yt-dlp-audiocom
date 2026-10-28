@@ -23,6 +23,8 @@ NEGATIVE = [
     'https://audio.com/david-oliveira-1877766671108274/collections/my-list',
     'https://audio.com/embed/audio/1877766681285368',
     'https://audio.com/audio/audio/1877766681285368',
+    'https://audio.com/Embed/audio/1877766681285368',
+    'https://audio.com/AUDIO/audio/1877766681285368',
     'https://audio.com.evil.example/u/audio/s',
     'https://notaudio.com/u/audio/s',
     'https://api.audio.com/audio/1877766681285368',

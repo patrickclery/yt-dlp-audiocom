@@ -12,8 +12,9 @@ from yt_dlp.utils.traversal import traverse_obj
 
 class AudioComIE(InfoExtractor):
     # Host is anchored so lookalike hosts and api.audio.com never match.
-    # embed/ and audio/audio/ paths would otherwise match with user=embed|audio.
-    _VALID_URL = r'https?://(?:www\.)?audio\.com/(?!embed/|audio/)(?P<user>[^/?#]+)/audio/(?P<slug>[^/?#]+)/?(?:[?#]|$)'
+    # embed/ and audio/audio/ paths would otherwise match with user=embed|audio;
+    # the lookahead is case-insensitive because user segments may be uppercase.
+    _VALID_URL = r'https?://(?:www\.)?audio\.com/(?!(?i:embed|audio)/)(?P<user>[^/?#]+)/audio/(?P<slug>[^/?#]+)/?(?:[?#]|$)'
     _API_BASE = 'https://api.audio.com'
     _TESTS = [{
         'url': 'https://audio.com/david-oliveira-1877766671108274/audio/rusted-pitchfork-dana-liske-uncut-version-astrayal-best',
