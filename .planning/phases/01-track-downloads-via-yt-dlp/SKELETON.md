@@ -24,8 +24,8 @@ Running `yt-dlp` (repo editable-installed in a pinned venv) on the canonical ref
 
 - [x] Project scaffold: `pyproject.toml` (hatchling, pytest config), `.gitignore`, pinned venvs, pytest runner
 - [x] Routing: `_VALID_URL` matches single-track URLs (incl. `www.`, trailing slash, query, uppercase) and rejects collections, profiles, `/embed/`, `/audio/audio/`
-- [ ] Data read: oEmbed and track-API JSON → info dict (formats and metadata)
-- [ ] Data write: yt-dlp writes the audio file, with embedded metadata, to disk
+- [x] Data read: oEmbed and track-API JSON → info dict (formats and metadata)
+- [x] Data write: yt-dlp writes the audio file, with embedded metadata, to disk
 - [x] Interface: yt-dlp CLI. `-v` lists `AudioComIE`, `-F` lists mp3/m4a audio-only rows, a download logs `[AudioCom]`
 - [x] Local full-stack run command: `.venv/bin/yt-dlp --ignore-config "<audio.com track URL>"`
 
