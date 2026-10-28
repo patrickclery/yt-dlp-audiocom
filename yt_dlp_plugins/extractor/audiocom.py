@@ -73,6 +73,16 @@ class AudioComIE(InfoExtractor):
         # oEmbed 404s on www., trailing slash, query and uppercase input.
         return f'https://audio.com/{user.lower()}/audio/{slug.lower()}'
 
+    @staticmethod
+    def _known_ext(obj):
+        # The API format label is only trusted if it is a known extension;
+        # anything else (e.g. 'm4a_hq', 'wv') falls back to the MIME type, so an
+        # unusual label cannot reach the filename and fail at download time.
+        return next((e for e in (
+            traverse_obj(obj, ('format', {str}, {str.lower})),
+            mimetype2ext(traverse_obj(obj, ('type', {str}))),
+        ) if e in KNOWN_EXTENSIONS), None)
+
     def _call_api(self, path, video_id, note, **kwargs):
         # A missing or restricted track is a user-side condition, not a bug, so the
         # error is expected: one line, no traceback and no "report this issue" text
@@ -122,13 +132,7 @@ class AudioComIE(InfoExtractor):
 
         formats = []
         for t in transcodings:
-            # The API format label is only trusted if it is a known extension;
-            # anything else (e.g. 'm4a_hq') falls back to the MIME type, so an
-            # unusual label cannot reach the filename and fail at download time.
-            ext = next((e for e in (
-                traverse_obj(t, ('format', {str}, {str.lower})),
-                mimetype2ext(traverse_obj(t, ('type', {str}))),
-            ) if e in KNOWN_EXTENSIONS), None)
+            ext = self._known_ext(t)
             abr = traverse_obj(t, ('bit_rate', {lambda x: float_or_none(x, 1000)}))
             formats.append({
                 'url': t['url'],
@@ -148,6 +152,41 @@ class AudioComIE(InfoExtractor):
             })
         if not formats:
             raise ExtractorError('No playable transcodings found', video_id=track_id, expected=True)
+
+        # EXTR-04: the uploader's original file, opt-in via -f original, only when
+        # the uploader allows downloads. Signed source URLs download without auth
+        # even when downloads are disallowed, so this check is the only control:
+        # only the literal True opens it, and no source URL is touched otherwise.
+        if data.get('is_downloadable') is True and url_or_none(traverse_obj(current, 'url')):
+            ext = self._known_ext(current)
+            if not ext:
+                # e.g. WavPack ('wv'): yt-dlp refuses the extension at download time.
+                self.write_debug(f'Skipping original upload: unsupported format {current.get("format")!r}')
+            # One-byte GET (HEAD gets 403 on these GET-signed URLs); some originals
+            # are missing on S3, and yt-dlp prints the skip line when this fails.
+            elif self._is_valid_url(current['url'], track_id, 'original upload', headers={'Range': 'bytes=0-0'}):
+                # A wavpack source is served as a converted PCM wav, so the API's
+                # codec, bitrate and size describe a different file; omit them.
+                converted = traverse_obj(current, ('codec', {str})) == 'wavpack'
+                formats.append({
+                    'url': current['url'],  # never the 'download' URL
+                    'format_id': 'original',
+                    'format_note': 'original upload',
+                    'ext': ext,
+                    'vcodec': 'none',
+                    # ie_pref outranks every sort field, so neither the default sort
+                    # nor a user -S can pick the original. No quality on purpose.
+                    'preference': -10,
+                    **({} if converted else traverse_obj(current, {
+                        'acodec': ('codec', {str}),
+                        'abr': ('bit_rate', {lambda x: float_or_none(x, 1000)}),
+                        'filesize': ('size', {int_or_none}),
+                    })),
+                    **traverse_obj(current, {
+                        'asr': ('sample_rate', {int_or_none}),
+                        'audio_channels': ('channels', {int_or_none}),
+                    }),
+                })
 
         # author_name is '' on some tracks; fall back to the username (D-11).
         username = traverse_obj(data, ('username', {str}, filter)) or user.lower()

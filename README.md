@@ -64,6 +64,9 @@ each target, always in this order (`.venv` = 2026.10.26, then `.venv-metube` =
    `ERROR: [AudioCom] this-slug-does-not-exist-zz9: This audio.com track is unavailable (removed, private, or wrong URL)`,
    and no traceback, "report this issue" or "HTTP Error" text
    (`ok: missing track gives one-line error`).
+9. A track not flagged downloadable (jasa-sisemore, whose original is a plain
+   wav) lists `mp3` and no `original` format
+   (`ok: non-downloadable track lists no original`).
 
 A failed step never stops the run. The last line is `ALL TARGETS PASSED` (exit 0)
 only when every step passed on both venvs, and `SOME TARGETS FAILED` (exit 1)
@@ -79,6 +82,23 @@ Environment variables:
 
 To run the harness by hand:
 `python scripts/run_live_tests.py <harness-root> [pytest -k expr] [extra pytest args]`.
+
+## Original uploads
+
+When the uploader allows downloads, the track also offers the file they uploaded
+(wav, mp3, m4a, flac and so on) as an extra format named `original`:
+
+```sh
+yt-dlp -f original 'https://audio.com/<user>/audio/<slug>'
+```
+
+- It is opt-in only. The default selection, `-f ba` and any `-S` sort keep
+  choosing the best transcoding (mp3 or m4a).
+- WavPack originals are not offered, because yt-dlp rejects the `wv` extension.
+- An original that audio.com no longer serves is skipped with a one-line note
+  (`<id>: original upload URL is invalid, skipping: HTTP Error 404: Not Found`).
+- Tracks not flagged downloadable never list an original. On those, and on the
+  cases above, `-f original` fails with `Requested format is not available`.
 
 ## Errors
 

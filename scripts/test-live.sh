@@ -6,8 +6,9 @@
 # yt-dlp version pin, fetches and verifies that version's own test harness,
 # runs the offline suite, checks that `yt-dlp -v` lists AudioComIE, runs
 # AudioComIE._TESTS through the harness's test/test_download.py, does one real
-# download of the reference track and checks that a nonexistent track fails
-# with a single clean ERROR line. A failed step never stops the run; the
+# download of the reference track, checks that a nonexistent track fails
+# with a single clean ERROR line and that a track not flagged downloadable
+# lists no original-upload format. A failed step never stops the run; the
 # last line is ALL TARGETS PASSED (exit 0) or SOME TARGETS FAILED (exit 1).
 #
 # Usage: scripts/test-live.sh   (needs network: github.com and audio.com)
@@ -28,6 +29,8 @@ REF_URL='https://audio.com/david-oliveira-1877766671108274/audio/rusted-pitchfor
 REF_ID=1877766681285368
 MISSING_URL='https://audio.com/david-oliveira-1877766671108274/audio/this-slug-does-not-exist-zz9'
 MISSING_ERROR='ERROR: [AudioCom] this-slug-does-not-exist-zz9: This audio.com track is unavailable (removed, private, or wrong URL)'
+# _TESTS[1]; is_downloadable false (EXTR-04 negative)
+NODL_URL='https://audio.com/jasa-sisemore/audio/jasasisemore-audacitypractice-autoduck-assignment-4aup'
 # Whole word, so other plugins may sit next to it but a lookalike such as
 # AudioComFooIE does not count.
 PLUGIN_RE='Extractor Plugins: .*\bAudioComIE\b'
@@ -153,6 +156,19 @@ for t in "${TARGETS[@]}"; do
   else
     printf '%s\n' "$out" | redact
     echo "FAIL: missing-track error (yt-dlp exit $rc, $errors ERROR lines, expected exactly: $MISSING_ERROR)"; fail=1
+  fi
+
+  # 9) EXTR-04: a track not flagged downloadable lists no original upload.
+  # jasa-sisemore is the meaningful negative: its source is a plain wav, which
+  # would pass the extension accept-list and the probe, so only the
+  # is_downloadable gate keeps it out. The reference's WavPack source would be
+  # rejected by the extension check anyway. Prints format ids only, never URLs.
+  out=$("$ytdlp" --ignore-config --simulate --print '%(formats.:.format_id)j' "$NODL_URL" 2>&1) && rc=0 || rc=$?
+  if [[ "$rc" -eq 0 && "$out" == *'"mp3"'* && "$out" != *original* ]]; then
+    echo "ok: non-downloadable track lists no original"
+  else
+    printf '%s\n' "$out" | redact
+    echo "FAIL: non-downloadable track (yt-dlp exit $rc, format ids: $out; need mp3 and no original)"; fail=1
   fi
 
   rm -rf "$work"

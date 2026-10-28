@@ -182,7 +182,8 @@ def test_mp3_only_yields_one_format(fx):
     if [t['format'] for t in data['audio']['transcodings']] != ['mp3']:
         pytest.skip('not an mp3-only fixture')
     info, _ = run_extract(data['url'])
-    assert len(info['formats']) == 1
+    # The original upload (02-03) is an extra format, not a transcoding.
+    assert len([f for f in info['formats'] if f['format_id'] != 'original']) == 1
 
 
 def test_highest_bitrate_selected(fx):
