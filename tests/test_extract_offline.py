@@ -22,6 +22,21 @@ BEST = {
 }
 
 
+REFERENCE_SLUG = 'rusted-pitchfork-dana-liske-uncut-version-astrayal-best'
+# Locked user-facing messages (D-04, D-09).
+UNAVAILABLE = 'This audio.com track is unavailable (removed, private, or wrong URL)'
+RESTRICTED = 'This audio.com track is private or restricted'
+# Verbatim 404 bodies observed live (RESEARCH Finding 1).
+OEMBED_404_BODY = b'{"name": "Not Found", "message": "Resource not found!", "code": 0, "status": 404}'
+AUDIO_404_BODY = b'{"name": "Not Found", "message": "Audio not found!", "code": 0, "status": 404}'
+REASONS = {401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found', 410: 'Gone', 500: 'Internal Server Error'}
+# endpoint: (failing URL, video_id the error must carry, 404 body)
+ENDPOINTS = {
+    'oembed': (f'{API}/oembed', REFERENCE_SLUG, OEMBED_404_BODY),
+    'audio': (f'{API}/audio/{REFERENCE_ID}', REFERENCE_ID, AUDIO_404_BODY),
+}
+
+
 def test_best_table_covers_every_fixture():
     assert set(BEST) == {p.stem for p in FIXTURE_PATHS}
 
@@ -125,43 +140,90 @@ def test_mutation_ext_ignores_url_path(monkeypatch):
 def test_edge_empty_oembed(monkeypatch):
     data = _reference()
     patch_api(monkeypatch, {}, data['audio'])
-    assert _raises_extractor_error(data['url']).expected is True
+    err = _raises_extractor_error(data['url'])
+    assert err.expected is True
+    assert err.video_id == REFERENCE_SLUG
 
 
 def test_edge_iframe_url_without_digits(monkeypatch):
     data = _reference()
     patch_api(monkeypatch, {'iframe_url': 'https://audio.com/embed/audio/abc'}, data['audio'])
-    assert _raises_extractor_error(data['url']).expected is True
+    err = _raises_extractor_error(data['url'])
+    assert err.expected is True
+    assert err.video_id == REFERENCE_SLUG
 
 
-def _patch_404(monkeypatch, failing_url):
+def _patch_http_error(monkeypatch, failing_url, status, body=b''):
+    """Serve the reference fixture, except `failing_url`, which fails with HTTP `status`."""
     data = _reference()
     patch_api(monkeypatch, data['oembed'], data['audio'])
     served = AudioComIE._download_json
 
     def fake(self, url_or_request, video_id, *args, **kwargs):
         if url_or_request == failing_url:
-            response = Response(io.BytesIO(b''), url_or_request, {}, status=404)
-            raise ExtractorError('HTTP Error 404: Not Found', cause=HTTPError(response))
+            response = Response(io.BytesIO(body), url_or_request, {}, status=status, reason=REASONS[status])
+            raise ExtractorError(f'HTTP Error {status}: {REASONS[status]}', cause=HTTPError(response))
         return served(self, url_or_request, video_id, *args, **kwargs)
 
     monkeypatch.setattr(AudioComIE, '_download_json', fake)
     return data
 
 
-@pytest.mark.parametrize('failing_url', [f'{API}/oembed', f'{API}/audio/{REFERENCE_ID}'])
-def test_edge_404_is_expected_error(monkeypatch, failing_url):
-    data = _patch_404(monkeypatch, failing_url)
-    err = _raises_extractor_error(data['url'])
+def _http_error(monkeypatch, endpoint, status):
+    failing_url, _, body_404 = ENDPOINTS[endpoint]
+    data = _patch_http_error(monkeypatch, failing_url, status, body_404 if status == 404 else b'')
+    return _raises_extractor_error(data['url'])
+
+
+def _assert_one_line_expected(err, msg, video_id):
     assert err.expected is True
-    assert 'report this issue' not in str(err)
+    assert err.msg == msg
+    assert err.video_id == video_id
+    text = str(err)
+    assert 'report this issue' not in text
+    assert 'HTTP Error' not in text
+    assert '\n' not in text
+
+
+@pytest.mark.parametrize('status', [404, 410])
+@pytest.mark.parametrize('endpoint', list(ENDPOINTS))
+def test_edge_unavailable_is_one_line_expected_error(monkeypatch, endpoint, status):
+    _assert_one_line_expected(_http_error(monkeypatch, endpoint, status), UNAVAILABLE, ENDPOINTS[endpoint][1])
+
+
+@pytest.mark.parametrize('status', [401, 403])
+@pytest.mark.parametrize('endpoint', list(ENDPOINTS))
+def test_edge_restricted_is_one_line_expected_error(monkeypatch, endpoint, status):
+    _assert_one_line_expected(_http_error(monkeypatch, endpoint, status), RESTRICTED, ENDPOINTS[endpoint][1])
+
+
+@pytest.mark.parametrize('endpoint', list(ENDPOINTS))
+def test_edge_500_is_reraised_unchanged(monkeypatch, endpoint):
+    err = _http_error(monkeypatch, endpoint, 500)
+    assert err.msg not in (UNAVAILABLE, RESTRICTED)
+    assert isinstance(err.cause, HTTPError) and err.cause.status == 500
+
+
+def test_unlisted_track_extracts_like_public(monkeypatch):
+    # D-09: is_public false means unlisted, which plays anonymously by link.
+    results = {}
+    for is_public in (True, False):
+        data = _reference()
+        data['audio']['is_public'] = is_public
+        patch_api(monkeypatch, data['oembed'], data['audio'])
+        info, _ = run_extract(data['url'])
+        results[is_public] = ([f['format_id'] for f in info['formats']], info['title'], info['duration'])
+    assert results[False] == results[True]
+    assert results[False][0]
 
 
 def test_edge_no_transcodings(monkeypatch):
     data = _reference()
     data['audio']['transcodings'] = []
     patch_api(monkeypatch, data['oembed'], data['audio'])
-    assert _raises_extractor_error(data['url']).expected is True
+    err = _raises_extractor_error(data['url'])
+    assert err.expected is True
+    assert err.video_id == REFERENCE_ID
 
 
 def test_edge_all_transcoding_urls_null(monkeypatch):
@@ -176,7 +238,9 @@ def test_edge_api_id_mismatch(monkeypatch):
     data = _reference()
     data['audio']['id'] = '0000000000000000'
     patch_api(monkeypatch, data['oembed'], data['audio'], track_id=REFERENCE_ID)
-    msg = str(_raises_extractor_error(data['url']))
+    err = _raises_extractor_error(data['url'])
+    assert err.video_id == REFERENCE_ID
+    msg = str(err)
     assert '0000000000000000' in msg and REFERENCE_ID in msg
 
 
