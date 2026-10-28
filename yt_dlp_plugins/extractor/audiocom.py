@@ -108,8 +108,20 @@ class AudioComIE(InfoExtractor):
         if returned_id != track_id:
             raise ExtractorError(f'API returned track {returned_id}, expected {track_id}', video_id=track_id)
 
+        # A re-uploaded track keeps every version in sources[], and transcodings[]
+        # mixes them. The site plays the newest upload (RESEARCH Finding 2), so
+        # keep only its transcodings: newest = largest date_created, a tie goes to
+        # the later entry. Without sources or a matching source_id, keep them all.
+        sources = traverse_obj(data, ('sources', lambda _, v: str_or_none(v['id'])))
+        current = max(reversed(sources), key=lambda s: int_or_none(s.get('date_created')) or 0, default=None)
+        current_id = traverse_obj(current, ('id', {str_or_none}))
+        transcodings = traverse_obj(data, ('transcodings', lambda _, v: url_or_none(v['url'])))
+        if current_id:
+            transcodings = [t for t in transcodings
+                            if str_or_none(t.get('source_id')) == current_id] or transcodings
+
         formats = []
-        for t in traverse_obj(data, ('transcodings', lambda _, v: url_or_none(v['url']))):
+        for t in transcodings:
             # The API format label is only trusted if it is a known extension;
             # anything else (e.g. 'm4a_hq') falls back to the MIME type, so an
             # unusual label cannot reach the filename and fail at download time.
@@ -150,13 +162,15 @@ class AudioComIE(InfoExtractor):
             'uploader_url': f'https://audio.com/{username}',
             **({'thumbnail': thumbnail} if thumbnail else {}),
             # /audio/<id> has no top-level duration or created: duration is the
-            # first transcoding's, in ms, and timestamp is date_created (D-10).
-            # upload_date is left to yt-dlp, which derives it from timestamp.
+            # current upload's first transcoding's, in ms (D-11), and timestamp is
+            # date_created (D-10). upload_date is left to yt-dlp (from timestamp).
+            **traverse_obj(transcodings, {
+                'duration': (0, 'duration', {lambda x: float_or_none(x, 1000)}),
+            }),
             **traverse_obj(data, {
                 'title': ('title', {str}),
                 'description': ('description', {str}, filter),
                 'timestamp': ('date_created', {int_or_none}),
-                'duration': ('transcodings', 0, 'duration', {lambda x: float_or_none(x, 1000)}),
                 'tags': ('tags', ..., {str}, filter, all, filter),
                 'view_count': ('stats', 'plays_count', {int_or_none}),
                 'like_count': ('stats', 'likes_count', {int_or_none}),
