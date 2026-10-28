@@ -14,7 +14,7 @@ Install the Phase 1–2 `AudioComIE` plugin into the running MeTube container (n
 ## Implementation Decisions
 
 ### Deploy mechanism (user-decided)
-- Copy, not symlink: `sudo install -m 644 yt_dlp_plugins/extractor/audiocom.py /opt/metube/plugins/yt_dlp_plugins/extractor/audiocom.py`. `/opt/metube/plugins` is root-owned → this is a **human-action checkpoint**: the user runs the sudo command themselves (e.g. via `! sudo install ...`). The agent never runs sudo
+- Copy, not symlink: `sudo install -m 644 yt_dlp_plugins/extractor/audiocom.py /opt/metube/plugins/yt_dlp_plugins/extractor/audiocom.py`. `/opt/metube/plugins` is root-owned → the user authorized the agent (2026-10-28) to run this `sudo install` directly (passwordless sudo available); NOT a human checkpoint
 - Updating = re-run the same `sudo install` command, then restart
 - Do NOT add any `__init__.py` under `/opt/metube/plugins/yt_dlp_plugins/` (would shadow MeTube's bgutil plugin); do NOT modify or remove `rumble_fix.py`
 - Do NOT edit `/opt/metube/docker-compose.yml` or the `metube.service` unit — the existing `/opt/metube/plugins:/plugins:ro` mount and `PYTHONPATH=/plugins` already cover it
