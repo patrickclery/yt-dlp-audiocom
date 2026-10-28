@@ -19,6 +19,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 ## Phase Details
 
 ### Phase 1: Track Downloads via yt-dlp
+
 **Goal**: User can run yt-dlp with the repo's plugin on an audio.com track URL and get an mp3 or m4a file with correct metadata, without impersonation.
 **Mode:** mvp
 **Depends on**: Nothing (first phase)
@@ -28,14 +29,20 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Running `yt-dlp` on the reference URL, and on its `www.`, trailing-slash, and query-string variants, picks `[AudioCom]` (not `[generic]`) and downloads the track with no Cloudflare 403 and no impersonation. Collection, profile, and `/embed/` URLs are not matched.
   3. `yt-dlp -F` on the reference URL lists mp3 and m4a formats with correct ext, abr, and acodec, and no video codec.
   4. The downloaded file has title, uploader, uploader_id/url, duration in seconds, and upload date. Thumbnail, description, tags, and counts appear only for tracks that have them, checked against redacted fixtures recorded from at least 5 sampled tracks.
+
 **Plans:** 2 plans
 
 Plans:
+**Wave 1**
 - [ ] 01-01-PLAN.md — Walking skeleton: package-legitimacy gate, hatchling plugin scaffold plus two pinned venvs, tracer (reference URL → oEmbed → API → m4a), URL variants and negatives
+
+**Wave 2** *(blocked on Wave 1 completion)*
 - [ ] 01-02-PLAN.md — Fixture recorder plus ≥5 redacted fixtures, highest-bitrate format selection, full metadata with uploader/thumbnail fallbacks
+
 **Research flag**: Sample at least 5 audio.com tracks for fixtures before finalizing the field mapping: `is_downloadable` true and false, with and without artwork, with and without description. Strip signatures and `app.*` config values.
 
 ### Phase 2: Edge Cases and Version Compatibility
+
 **Goal**: The plugin works on every track variant and on both target yt-dlp versions, and has a test command that proves it.
 **Mode:** mvp
 **Depends on**: Phase 1
@@ -45,10 +52,12 @@ Plans:
   2. A removed, private, or nonexistent track URL fails with a one-line yt-dlp `ERROR:` that states the cause, with no traceback and no bare HTTP 404.
   3. One documented local command runs the extractor's `_TESTS` (the reference URL plus at least one other track), and it passes.
   4. That test command and a real download both pass on yt-dlp 2026.08.19 and on current stable.
+
 **Plans**: TBD
 **Research flag**: How private and unlisted tracks behave is unknown. Probe these cases and map each one to `ExtractorError(expected=True)`.
 
 ### Phase 3: MeTube Deploy
+
 **Goal**: Pasting an audio.com track URL into MeTube produces a playable audio file in the download folder.
 **Mode:** mvp
 **Depends on**: Phase 2
@@ -57,6 +66,7 @@ Plans:
   1. After the plugin is placed at `/opt/metube/plugins/yt_dlp_plugins/extractor/audiocom.py` (mode 644, no image rebuild), `docker exec metube yt-dlp -v` lists AudioCom alongside `rumble_fix` and the other existing plugins, with no import errors.
   2. Pasting the reference audio.com URL into MeTube produces a playable audio file with the correct title in the download folder.
   3. The README covers install, update, and the step to delete the plugin once bundled yt-dlp includes `[audiocom]`. Following its install steps reproduces the working deploy.
+
 **Plans**: TBD
 
 ## Progress
