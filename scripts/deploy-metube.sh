@@ -145,7 +145,15 @@ echo "ok: installed plugin matches repo (sha256 ${sha:0:12})"
 
 # 2) An __init__.py anywhere under the plugin dir turns yt_dlp_plugins into a
 # regular package and hides MeTube's bundled bgutil plugins (PITFALLS 7).
-inits=$(find "$PLUGINS_DIR" -name __init__.py 2>/dev/null || true)
+# A missing or partly unreadable dir fails here instead of passing as "none found".
+if [[ ! -d "$PLUGINS_DIR" ]]; then
+  echo "FAIL: plugin dir $PLUGINS_DIR not found"
+  die
+fi
+if ! inits=$(find "$PLUGINS_DIR" -name __init__.py 2>&1); then
+  echo "FAIL: cannot scan $PLUGINS_DIR: ${inits//$'\n'/; }"
+  die
+fi
 if [[ -n "$inits" ]]; then
   echo "FAIL: ${inits//$'\n'/, } shadows MeTube's bundled plugins; remove it before deploying"
   die
