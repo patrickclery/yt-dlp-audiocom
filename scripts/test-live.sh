@@ -5,8 +5,9 @@
 # .venv-metube = yt-dlp 2026.08.19, MeTube's bundled version), it checks the
 # yt-dlp version pin, fetches and verifies that version's own test harness,
 # runs the offline suite, checks that `yt-dlp -v` lists AudioComIE, runs
-# AudioComIE._TESTS through the harness's test/test_download.py and does one
-# real download of the reference track. A failed step never stops the run; the
+# AudioComIE._TESTS through the harness's test/test_download.py, does one real
+# download of the reference track and checks that a nonexistent track fails
+# with a single clean ERROR line. A failed step never stops the run; the
 # last line is ALL TARGETS PASSED (exit 0) or SOME TARGETS FAILED (exit 1).
 #
 # Usage: scripts/test-live.sh   (needs network: github.com and audio.com)
@@ -25,6 +26,8 @@ ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)
 CACHE=${AUDIOCOM_HARNESS_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/yt-dlp-audiocom/harness}
 REF_URL='https://audio.com/david-oliveira-1877766671108274/audio/rusted-pitchfork-dana-liske-uncut-version-astrayal-best'
 REF_ID=1877766681285368
+MISSING_URL='https://audio.com/david-oliveira-1877766671108274/audio/this-slug-does-not-exist-zz9'
+MISSING_ERROR='ERROR: [AudioCom] this-slug-does-not-exist-zz9: This audio.com track is unavailable (removed, private, or wrong URL)'
 # Whole word, so other plugins may sit next to it but a lookalike such as
 # AudioComFooIE does not count.
 PLUGIN_RE='Extractor Plugins: .*\bAudioComIE\b'
@@ -138,6 +141,18 @@ for t in "${TARGETS[@]}"; do
   else
     printf '%s\n' "$out" | redact
     echo "FAIL: real download (yt-dlp exit $rc, no non-empty $REF_ID.m4a)"; fail=1
+  fi
+
+  # 8) EXTR-06: a nonexistent track fails with exactly one clean ERROR line.
+  out=$("$ytdlp" --ignore-config --simulate "$MISSING_URL" 2>&1) && rc=0 || rc=$?
+  errors=$(grep -c '^ERROR:' <<<"$out" || true)
+  first=$(grep -m 1 '^ERROR:' <<<"$out" || true)
+  if [[ "$rc" -ne 0 && "$errors" -eq 1 && "$first" == "$MISSING_ERROR" ]] \
+      && ! grep -qE 'Traceback|report this issue|HTTP Error' <<<"$out"; then
+    echo "ok: missing track gives one-line error"
+  else
+    printf '%s\n' "$out" | redact
+    echo "FAIL: missing-track error (yt-dlp exit $rc, $errors ERROR lines, expected exactly: $MISSING_ERROR)"; fail=1
   fi
 
   rm -rf "$work"

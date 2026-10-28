@@ -60,6 +60,10 @@ each target, always in this order (`.venv` = 2026.10.26, then `.venv-metube` =
    (`ok: _TESTS <N> passed`).
 7. A real download of the reference track's default format, a non-empty m4a
    (`ok: downloaded <bytes> bytes`).
+8. A nonexistent track URL fails (non-zero exit) with exactly one `ERROR:` line,
+   `ERROR: [AudioCom] this-slug-does-not-exist-zz9: This audio.com track is unavailable (removed, private, or wrong URL)`,
+   and no traceback, "report this issue" or "HTTP Error" text
+   (`ok: missing track gives one-line error`).
 
 A failed step never stops the run. The last line is `ALL TARGETS PASSED` (exit 0)
 only when every step passed on both venvs, and `SOME TARGETS FAILED` (exit 1)
@@ -75,3 +79,19 @@ Environment variables:
 
 To run the harness by hand:
 `python scripts/run_live_tests.py <harness-root> [pytest -k expr] [extra pytest args]`.
+
+## Errors
+
+A track that cannot be fetched fails with one line naming the track (its URL slug,
+or its numeric id once known) and the cause, with no traceback:
+
+- `ERROR: [AudioCom] <slug or id>: This audio.com track is unavailable (removed, private, or wrong URL)`:
+  audio.com answered 404 or 410. The track was removed, the URL is mistyped, or
+  the track is private to its owner.
+- `ERROR: [AudioCom] <slug or id>: This audio.com track is private or restricted`:
+  audio.com answered 401 or 403, so the track exists but is not available
+  anonymously.
+
+Unlisted tracks (not shown on the uploader's profile, but playable by anyone with
+the link) download normally. Any other failure keeps yt-dlp's own error message.
+Add `-v` to see the requests and the debug trace behind an error.

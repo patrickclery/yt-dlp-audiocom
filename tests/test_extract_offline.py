@@ -176,10 +176,12 @@ def _http_error(monkeypatch, endpoint, status):
 
 
 def _assert_one_line_expected(err, msg, video_id):
+    # orig_msg is the raised text; msg/str() add the "[AudioCom] <id>: " prefix.
     assert err.expected is True
-    assert err.msg == msg
+    assert err.orig_msg == msg
     assert err.video_id == video_id
     text = str(err)
+    assert text == f'[AudioCom] {video_id}: {msg}'
     assert 'report this issue' not in text
     assert 'HTTP Error' not in text
     assert '\n' not in text
@@ -200,7 +202,8 @@ def test_edge_restricted_is_one_line_expected_error(monkeypatch, endpoint, statu
 @pytest.mark.parametrize('endpoint', list(ENDPOINTS))
 def test_edge_500_is_reraised_unchanged(monkeypatch, endpoint):
     err = _http_error(monkeypatch, endpoint, 500)
-    assert err.msg not in (UNAVAILABLE, RESTRICTED)
+    assert err.orig_msg not in (UNAVAILABLE, RESTRICTED)
+    assert 'HTTP Error 500' in err.orig_msg
     assert isinstance(err.cause, HTTPError) and err.cause.status == 500
 
 
