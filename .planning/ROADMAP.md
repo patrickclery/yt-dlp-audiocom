@@ -13,7 +13,7 @@ Three phases take this from nothing to a working MeTube download. Phase 1 sets u
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Track Downloads via yt-dlp** - Plugin repo, recorded fixtures from 5+ tracks, and an `AudioComIE` that downloads mp3/m4a with correct metadata (completed 2026-10-28)
-- [ ] **Phase 2: Edge Cases and Version Compatibility** - Originals gated on `is_downloadable`, clean errors, `_TESTS`, and checks on yt-dlp 2026.08.19 and current stable
+- [x] **Phase 2: Edge Cases and Version Compatibility** - Originals gated on `is_downloadable`, clean errors, `_TESTS`, and checks on yt-dlp 2026.08.19 and current stable (completed 2026-10-28)
 - [ ] **Phase 3: MeTube Deploy** - Plugin installed into the MeTube container next to existing plugins, plus README for install, update, and removal
 
 ## Phase Details
@@ -53,17 +53,18 @@ Plans:
   3. One documented local command runs the extractor's `_TESTS` (the reference URL plus at least one other track), and it passes.
   4. That test command and a real download both pass on yt-dlp 2026.08.19 and on current stable.
 
-**Plans:** 3 plans
+**Plans:** 3/3 plans complete
 
 Plans:
 **Wave 1**
-- [ ] 02-01-PLAN.md — Tracer: `scripts/test-live.sh` runs `_TESTS` (reference + jasa-sisemore) through yt-dlp's pinned harness, plus a real download, on both versions; one-line errors for missing/private tracks
+- [x] 02-01-PLAN.md — Tracer: `scripts/test-live.sh` runs `_TESTS` (reference + jasa-sisemore) through yt-dlp's pinned harness, plus a real download, on both versions; one-line errors for missing/private tracks
 
 **Wave 2** *(blocked on Wave 1 completion)*
-- [ ] 02-02-PLAN.md — Recorder and 12 fixtures gain is_downloadable/sources (no signed URLs); re-uploaded tracks use only the current upload's formats and duration
+- [x] 02-02-PLAN.md — Recorder and 12 fixtures gain is_downloadable/sources (no signed URLs); re-uploaded tracks use only the current upload's formats and duration
 
 **Wave 3** *(blocked on Wave 2 completion)*
-- [ ] 02-03-PLAN.md — Opt-in `-f original` only when is_downloadable is True (wv skipped, Range-probed); live negative in test-live.sh; README section
+- [x] 02-03-PLAN.md — Opt-in `-f original` only when is_downloadable is True (wv skipped, Range-probed); live negative in test-live.sh; README section
+
 **Research flag**: How private and unlisted tracks behave is unknown. Probe these cases and map each one to `ExtractorError(expected=True)`.
 
 ### Phase 3: MeTube Deploy
@@ -87,5 +88,5 @@ Phases execute in numeric order: 1 → 2 → 3
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Track Downloads via yt-dlp | 2/2 | Complete    | 2026-10-28 |
-| 2. Edge Cases and Version Compatibility | 0/3 | Planned | - |
+| 2. Edge Cases and Version Compatibility | 3/3 | Complete    | 2026-10-28 |
 | 3. MeTube Deploy | 0/TBD | Not started | - |
