@@ -107,6 +107,18 @@ def test_probe_only_for_downloadable(fx, probe):
     assert not [k for k in kwargs if 'imperson' in k]
 
 
+def test_default_extraction_never_probes(fx, probe, monkeypatch):
+    # WR-06: a download that did not ask for the original makes no S3 request and
+    # prints no probe or skip line, even where the original is missing on S3.
+    probe.reachable = False
+    screen = []
+    monkeypatch.setattr(AudioComIE, 'to_screen', lambda self, msg, *args, **kwargs: screen.append(msg))
+    data, _ = fx
+    run_extract(data['url'])
+    assert probe.calls == []
+    assert not [m for m in screen if 'original upload' in m]
+
+
 def test_no_source_url_leaks_when_not_downloadable(fx):
     # Signed source URLs download without auth, so none may reach the info dict.
     data, _ = fx

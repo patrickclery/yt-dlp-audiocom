@@ -98,9 +98,12 @@ yt-dlp -f original 'https://audio.com/<user>/audio/<slug>'
   (the default, `-f ba`, `-f worst`, `-f wa`, `-f 'ba[ext=wav]'`, any `-S` sort)
   never sees it and keeps choosing a transcoding (mp3 or m4a). For the same
   reason `-j` does not include it unless `-f` names it.
+- Only then is its URL checked (a one-byte request), so a plain download makes
+  no extra request. An original that audio.com no longer serves is skipped with
+  a one-line note
+  (`<id>: original upload URL is invalid, skipping: HTTP Error 404: Not Found`);
+  a network failure names only the error type, never the URL.
 - WavPack originals are not offered, because yt-dlp rejects the `wv` extension.
-- An original that audio.com no longer serves is skipped with a one-line note
-  (`<id>: original upload URL is invalid, skipping: HTTP Error 404: Not Found`).
 - Tracks not flagged downloadable never list an original. On those, and on the
   cases above, `-f original` fails with `Requested format is not available`.
 
