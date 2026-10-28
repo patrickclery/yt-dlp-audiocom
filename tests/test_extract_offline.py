@@ -178,3 +178,24 @@ def test_edge_api_id_mismatch(monkeypatch):
     patch_api(monkeypatch, data['oembed'], data['audio'], track_id=REFERENCE_ID)
     msg = str(_raises_extractor_error(data['url']))
     assert '0000000000000000' in msg and REFERENCE_ID in msg
+
+
+@pytest.mark.parametrize('bad_id', [999, None])
+def test_edge_api_id_non_string_mismatch(monkeypatch, bad_id):
+    data = _reference()
+    data['audio']['id'] = bad_id
+    patch_api(monkeypatch, data['oembed'], data['audio'], track_id=REFERENCE_ID)
+    assert REFERENCE_ID in str(_raises_extractor_error(data['url']))
+
+
+def test_edge_api_id_integer_match_accepted(monkeypatch):
+    data = _reference()
+    data['audio']['id'] = int(REFERENCE_ID)
+    patch_api(monkeypatch, data['oembed'], data['audio'], track_id=REFERENCE_ID)
+    assert run_extract(data['url'])[0]['id'] == REFERENCE_ID
+
+
+def test_edge_iframe_url_partial_digit_run(monkeypatch):
+    data = _reference()
+    patch_api(monkeypatch, {'iframe_url': f'https://audio.com/embed/audio/{REFERENCE_ID}abc'}, data['audio'])
+    _raises_extractor_error(data['url'])

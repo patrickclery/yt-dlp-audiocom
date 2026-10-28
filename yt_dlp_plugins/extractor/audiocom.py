@@ -13,6 +13,7 @@ from yt_dlp.utils import (
     float_or_none,
     int_or_none,
     mimetype2ext,
+    str_or_none,
     url_or_none,
 )
 from yt_dlp.utils.traversal import traverse_obj
@@ -69,13 +70,14 @@ class AudioComIE(InfoExtractor):
         canonical = self._canonical_url(user, slug)
         oembed = self._call_api('oembed', slug, 'Downloading oEmbed JSON', query={'url': canonical})
         track_id = self._search_regex(
-            r'/embed/audio/(\d+)', traverse_obj(oembed, ('iframe_url', {str})) or '', 'track id',
+            r'/embed/audio/(\d+)(?:[/?#]|$)', traverse_obj(oembed, ('iframe_url', {str})) or '', 'track id',
             fatal=False)
         if not track_id:
             raise ExtractorError('oEmbed returned no embed URL for this track', expected=True)
         data = self._call_api(f'audio/{track_id}', track_id, 'Downloading track JSON')
-        returned_id = traverse_obj(data, ('id', {str}))
-        if returned_id and returned_id != track_id:
+        # str_or_none: an integer id must not bypass the mismatch check.
+        returned_id = traverse_obj(data, ('id', {str_or_none}))
+        if returned_id != track_id:
             raise ExtractorError(f'API returned track {returned_id}, expected {track_id}')
 
         formats = []
