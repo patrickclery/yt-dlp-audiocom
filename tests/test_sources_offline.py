@@ -256,7 +256,23 @@ def test_mutation_probe_failure_drops_original(monkeypatch, probe):
     assert sorted(f['format_id'] for f in info['formats']) == ['m4a', 'mp3']
     assert processed['format_id'] == BEST[ALEC_ID]
     (skip,) = [m for m in screen if 'original upload URL is invalid, skipping' in m]
+    assert skip == f'{ALEC_ID}: original upload URL is invalid, skipping: HTTP Error 404: Not Found'
     assert 'http' not in skip  # only the HTTP status, never the URL (T-02-11)
+
+
+def test_mutation_probe_transport_error_never_prints_url(monkeypatch, probe):
+    # WR-02: under the requests handler a connection failure's text is urllib3's,
+    # which quotes the path and the presigned query; none of it may be printed.
+    probe.transport_error = ("HTTPSConnectionPool(host='s3.example', port=443): Max retries exceeded"
+                             ' with url: /x?X-Amz-Signature=abc')
+    screen = []
+    monkeypatch.setattr(AudioComIE, 'to_screen', lambda self, msg, *args, **kwargs: screen.append(msg))
+    info, _ = _extract(monkeypatch, _alec())
+    assert _originals(info) == []
+    (skip,) = [m for m in screen if 'original upload URL is invalid, skipping' in m]
+    assert skip == f'{ALEC_ID}: original upload URL is invalid, skipping: TransportError'
+    for leak in ('X-Amz', '/x', 's3.example', 'Signature'):
+        assert leak not in ' '.join(screen)
 
 
 def test_mutation_source_without_url(monkeypatch, probe):

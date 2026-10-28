@@ -96,6 +96,19 @@ class AudioComIE(InfoExtractor):
         return isinstance(spec, str) and (
             spec == '-' or re.search(r'(?<![\w-])original(?![\w-])', spec) is not None)
 
+    def _probe_original(self, url, track_id):
+        # Not _is_valid_url: its skip line prints str(cause), and a transport error
+        # (e.g. urllib3's MaxRetryError under the requests handler) quotes the path
+        # and presigned query. Only the HTTP status or the error type is printed.
+        try:
+            self._request_webpage(
+                url, track_id, 'Checking original upload URL', headers={'Range': 'bytes=0-0'}).close()
+        except ExtractorError as e:
+            reason = str(e.cause) if isinstance(e.cause, HTTPError) else type(e.cause or e).__name__
+            self.to_screen(f'{track_id}: original upload URL is invalid, skipping: {reason}')
+            return False
+        return True
+
     def _call_api(self, path, video_id, note, **kwargs):
         # A missing or restricted track is a user-side condition, not a bug, so the
         # error is expected: one line, no traceback and no "report this issue" text
@@ -177,8 +190,8 @@ class AudioComIE(InfoExtractor):
                 # e.g. WavPack ('wv'): yt-dlp refuses the extension at download time.
                 self.write_debug(f'Skipping original upload: unsupported format {current.get("format")!r}')
             # One-byte GET (HEAD gets 403 on these GET-signed URLs); some originals
-            # are missing on S3, and yt-dlp prints the skip line when this fails.
-            elif self._is_valid_url(current['url'], track_id, 'original upload', headers={'Range': 'bytes=0-0'}):
+            # are missing on S3.
+            elif self._probe_original(current['url'], track_id):
                 # A wavpack source is served as a converted PCM wav, so the API's
                 # codec, bitrate and size describe a different file; omit them.
                 converted = traverse_obj(current, ('codec', {str})) == 'wavpack'

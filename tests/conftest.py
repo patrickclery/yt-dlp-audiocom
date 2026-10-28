@@ -1,6 +1,6 @@
 """Offline test helpers: recorded fixtures replace AudioComIE._download_json (RESEARCH Pattern 1).
 
-The original-upload probe (_is_valid_url -> _request_webpage) is a second network
+The original-upload probe (_probe_original -> _request_webpage) is a second network
 path, so the autouse `probe` fixture stubs it for every test (RESEARCH Pattern 3).
 """
 import copy
@@ -11,7 +11,7 @@ import pathlib
 import pytest
 from yt_dlp import YoutubeDL
 from yt_dlp.networking import Response
-from yt_dlp.networking.exceptions import HTTPError
+from yt_dlp.networking.exceptions import HTTPError, TransportError
 from yt_dlp.utils import ExtractorError
 
 from yt_dlp_plugins.extractor.audiocom import AudioComIE
@@ -85,6 +85,7 @@ class _Probe:
     def __init__(self):
         self.calls = []
         self.reachable = True
+        self.transport_error = None  # message for a TransportError, e.g. a URL-quoting one
 
 
 @pytest.fixture(autouse=True)
@@ -92,16 +93,21 @@ def probe(monkeypatch):
     """Stub AudioComIE._request_webpage so no test can reach S3; never does I/O.
 
     While `probe.reachable` is True (default) the request succeeds; set it to
-    False to make it fail like a missing S3 object (HTTP 404).
+    False to make it fail like a missing S3 object (HTTP 404). Set
+    `probe.transport_error` to a message to make it fail like a connection error.
     """
     state = _Probe()
 
     def fake(self, url_or_request, video_id, *args, headers=None, **kwargs):
         state.calls.append((url_or_request, headers, kwargs))
+        if state.transport_error:
+            # yt-dlp's own wrapping: the ExtractorError text embeds str(cause).
+            raise ExtractorError(f'Unable to download webpage: {state.transport_error}',
+                                 cause=TransportError(state.transport_error))
         if not state.reachable:
             response = Response(io.BytesIO(b''), url_or_request, {}, status=404, reason='Not Found')
             raise ExtractorError('HTTP Error 404: Not Found', cause=HTTPError(response))
-        return object()  # stand-in response; _is_valid_url only needs no exception
+        return Response(io.BytesIO(b'\0'), url_or_request, {}, status=206)
 
     monkeypatch.setattr(AudioComIE, '_request_webpage', fake)
     return state
