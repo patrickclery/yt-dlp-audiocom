@@ -22,12 +22,12 @@ Running `yt-dlp` (repo editable-installed in a pinned venv) on the canonical ref
 
 ## Stack Touched in Phase 1
 
-- [ ] Project scaffold: `pyproject.toml` (hatchling, pytest config), `.gitignore`, pinned venvs, pytest runner
-- [ ] Routing: `_VALID_URL` matches single-track URLs (incl. `www.`, trailing slash, query, uppercase) and rejects collections, profiles, `/embed/`, `/audio/audio/`
+- [x] Project scaffold: `pyproject.toml` (hatchling, pytest config), `.gitignore`, pinned venvs, pytest runner
+- [x] Routing: `_VALID_URL` matches single-track URLs (incl. `www.`, trailing slash, query, uppercase) and rejects collections, profiles, `/embed/`, `/audio/audio/`
 - [ ] Data read: oEmbed and track-API JSON → info dict (formats and metadata)
 - [ ] Data write: yt-dlp writes the audio file, with embedded metadata, to disk
-- [ ] Interface: yt-dlp CLI. `-v` lists `AudioComIE`, `-F` lists mp3/m4a audio-only rows, a download logs `[AudioCom]`
-- [ ] Local full-stack run command: `.venv/bin/yt-dlp --ignore-config "<audio.com track URL>"`
+- [x] Interface: yt-dlp CLI. `-v` lists `AudioComIE`, `-F` lists mp3/m4a audio-only rows, a download logs `[AudioCom]`
+- [x] Local full-stack run command: `.venv/bin/yt-dlp --ignore-config "<audio.com track URL>"`
 
 ## Out of Scope (Deferred to Later Slices)
 
