@@ -11,7 +11,9 @@ from yt_dlp.utils.traversal import traverse_obj
 
 
 class AudioComIE(InfoExtractor):
-    _VALID_URL = r'https://audio\.com/(?P<user>[^/?#]+)/audio/(?P<slug>[^/?#]+)$'
+    # Host is anchored so lookalike hosts and api.audio.com never match.
+    # embed/ and audio/audio/ paths would otherwise match with user=embed|audio.
+    _VALID_URL = r'https?://(?:www\.)?audio\.com/(?!embed/|audio/)(?P<user>[^/?#]+)/audio/(?P<slug>[^/?#]+)/?(?:[?#]|$)'
     _API_BASE = 'https://api.audio.com'
     _TESTS = [{
         'url': 'https://audio.com/david-oliveira-1877766671108274/audio/rusted-pitchfork-dana-liske-uncut-version-astrayal-best',
@@ -21,14 +23,19 @@ class AudioComIE(InfoExtractor):
             'display_id': 'rusted-pitchfork-dana-liske-uncut-version-astrayal-best',
             'title': 'Rusted Pitchfork — Dana Liske (Uncut Version) - Astrayal best',
         },
+    }, {
+        'url': 'https://www.audio.com/David-Oliveira-1877766671108274/audio/rusted-pitchfork-dana-liske-uncut-version-astrayal-best/?utm_source=share',
+        'only_matching': True,
     }]
 
     @staticmethod
     def _canonical_url(user, slug):
-        return f'https://audio.com/{user}/audio/{slug}'
+        # oEmbed 404s on www., trailing slash, query and uppercase input.
+        return f'https://audio.com/{user.lower()}/audio/{slug.lower()}'
 
     def _real_extract(self, url):
         user, slug = self._match_valid_url(url).group('user', 'slug')
+        slug = slug.lower()
         canonical = self._canonical_url(user, slug)
         oembed = self._download_json(
             f'{self._API_BASE}/oembed', slug, 'Downloading oEmbed JSON', query={'url': canonical})
