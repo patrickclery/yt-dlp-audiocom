@@ -21,10 +21,13 @@ Deliver a yt-dlp extractor plugin (`AudioComIE`) in this repo that, when on the 
 
 ### Extraction behavior
 - Data path: canonicalize URL from regex groups → `GET https://api.audio.com/oembed?url=<canonical>` → parse id from `iframe_url` (`/embed/audio/(\d+)`) → `GET https://api.audio.com/audio/<id>`. No HTML page fetch, no impersonation
-- Formats from `transcodings[]` (mp3 ~192k, m4a ~306k) with `abr`, `acodec`, `ext`, `vcodec: 'none'`; let yt-dlp's default sort choose (m4a wins on bitrate). Derive ext from format/MIME, never from signed URL path
+- Formats from `transcodings[]` with `abr`, `acodec`, `ext`, `vcodec: 'none'`. Derive ext from format/MIME, never from signed URL path. Older tracks (2023–24) may have only an mp3 transcoding — never assume both exist
+- **Format preference (revised after research, user-decided 2026-10-28):** highest bitrate wins. Set a bitrate-based `quality` (or equivalent) so yt-dlp's default selection picks the highest-abr format, not codec order (one track had a 9 kbps m4a vs 160 kbps mp3)
 - Include `view_count`, `like_count`, `comment_count`, `repost_count`, `tags` in Phase 1 when present (same JSON)
 - Fixtures: strip URL signatures (`X-Amz-*` query params) and any tokens/keys; keep only fields the extractor reads
-- `duration` from API is milliseconds → divide by 1000; `timestamp` from `created`
+- Field paths corrected by research: `timestamp` from `date_created`; `duration` from `transcodings[0].duration` (milliseconds → /1000). See 01-RESEARCH.md for the verified field map
+- **Fallbacks (user-decided):** `uploader` falls back to username when `author_name` is empty; `thumbnail` falls back to the uploader's avatar when the track has no cover art
+- Packaging: use hatchling (setuptools editable installs are not discovered by yt-dlp); lowercase username/slug before oEmbed; `_VALID_URL` excludes `embed/` and `audio/audio/`
 - Do NOT emit `sources[]` in Phase 1 (gating on `is_downloadable` is Phase 2, EXTR-04)
 
 ### Claude's Discretion
