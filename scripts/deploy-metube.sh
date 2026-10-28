@@ -3,10 +3,11 @@
 #
 # Checks that the plugin file the user installed in MeTube's host plugin
 # directory is identical to this repo's yt_dlp_plugins/extractor/audiocom.py,
-# restarts the metube container (same container, no recreate), and checks
-# inside it that yt-dlp loads AudioComIE next to the existing Rumble plugins
-# and extracts the reference track. With --smoke it also submits the reference
-# track to MeTube the way the web UI does and checks the saved file.
+# waits until MeTube has no active download, restarts the metube container
+# (same container, no recreate), and checks inside it that yt-dlp loads
+# AudioComIE next to the existing Rumble plugins and extracts the reference
+# track. With --smoke it also submits the reference track to MeTube the way the
+# web UI does and checks the saved file.
 #
 # This script never runs sudo. When the installed file is missing or out of
 # date it only prints the one sudo install command for the user to run, and
@@ -14,7 +15,14 @@
 # and, with --smoke, one new download named audiocom-smoke-<mode>-<epoch>.<title>
 # in the download folder. It never deletes, moves or overwrites any file.
 #
-# Usage: scripts/deploy-metube.sh [--smoke video]
+# Usage: scripts/deploy-metube.sh [--check] [--force] [--smoke video|audio]
+#   (no option)    install check, wait for active downloads, restart, load checks
+#   --check        the same checks without the restart; run it after a MeTube
+#                  image update
+#   --force        restart even while downloads are active (skips the wait)
+#   --smoke MODE   also download the reference track through MeTube: video is
+#                  the web UI's default form (m4a), audio is Audio/MP3 (mp3)
+#   Options combine, e.g. --force --smoke audio or --check --smoke video.
 #
 # Env:
 #   AUDIOCOM_INSTALL_PATH  installed plugin file
@@ -22,6 +30,8 @@
 #   METUBE_URL             MeTube's HTTP address (default http://127.0.0.1:8085)
 #   METUBE_DOWNLOADS       host path of MeTube's download folder
 #                          (default /tank/docker/metube/downloads)
+#   AUDIOCOM_DRAIN_TIMEOUT seconds to wait for active downloads before the
+#                          restart (default 300)
 #
 # Each step prints one `ok: ...` or `FAIL: ...` line. The last line is
 # DEPLOY OK (exit 0) or DEPLOY FAILED (exit 1). Raw yt-dlp output and MeTube's
@@ -48,7 +58,7 @@ PLUGIN_WORD='\bAudioComIE\b'
 # SIGPIPE and the pipeline reports a failure even though the text was there.
 
 usage() {
-  echo 'Usage: scripts/deploy-metube.sh [--smoke video]'
+  echo 'Usage: scripts/deploy-metube.sh [--check] [--force] [--smoke video|audio]'
 }
 
 redact() {  # strip query strings (presign parameters) from any URL or bare path
@@ -60,15 +70,21 @@ die() {  # the last FAIL line is already printed; nothing after this point runs
   exit 1
 }
 
-smoke=''
+smoke='' check=0 force=0
 while [[ $# -gt 0 ]]; do
   case $1 in
     --smoke)
-      if [[ $# -lt 2 || $2 != video ]]; then usage >&2; exit 2; fi
+      if [[ $# -lt 2 || ( $2 != video && $2 != audio ) ]]; then usage >&2; exit 2; fi
       smoke=$2; shift 2 ;;
+    --check) check=1; shift ;;
+    --force) force=1; shift ;;
     *) usage >&2; exit 2 ;;
   esac
 done
+DRAIN_TIMEOUT=${AUDIOCOM_DRAIN_TIMEOUT:-300}
+if [[ ! "$DRAIN_TIMEOUT" =~ ^[0-9]+$ ]]; then
+  echo "AUDIOCOM_DRAIN_TIMEOUT must be a whole number of seconds" >&2; exit 2
+fi
 
 marker=''
 cleanup() { [[ -z "$marker" ]] || rm -f "$marker"; }
@@ -124,21 +140,62 @@ else
   echo "FAIL: $RUMBLE is missing"; fail=1
 fi
 
-# 4) Restart the same container. Only restart, exec and inspect are used.
-before=$(docker inspect -f '{{.Id}} {{.State.StartedAt}}' "$CONTAINER" 2>/dev/null || true)
-if [[ -z "$before" ]]; then
-  echo "FAIL: container $CONTAINER not found"
-  die
-fi
-read -r id0 start0 <<<"$before"
-out=$(docker restart "$CONTAINER" 2>&1) && rc=0 || rc=$?
-after=$(docker inspect -f '{{.Id}} {{.State.StartedAt}}' "$CONTAINER" 2>/dev/null || true)
-read -r id1 start1 <<<"$after"
-if [[ "$rc" -eq 0 && "$id1" == "$id0" && -n "$start1" && "$start1" != "$start0" ]]; then
-  echo "ok: restarted metube (same container)"
+# Restart guard: never restart while MeTube is working on an item. Pending,
+# queued and scheduled items persist across a restart, so they do not count.
+# A failed request is retried until the timeout.
+drain() {
+  local deadline=$((SECONDS + DRAIN_TIMEOUT)) h n active='' answered=0
+  while :; do
+    h=$(curl -sf --max-time 5 "$METUBE_URL/history" 2>/dev/null || true)
+    n=$(jq -r 'if type == "object" then [(.queue // [])[]
+          | select(.status == "preparing" or .status == "downloading" or .status == "postprocessing")]
+          | length else empty end' <<<"$h" 2>/dev/null || true)
+    if [[ "$n" =~ ^[0-9]+$ ]]; then
+      answered=1; active=$n
+      if [[ "$n" -eq 0 ]]; then
+        echo "ok: no active downloads"
+        return 0
+      fi
+    fi
+    if [[ "$SECONDS" -ge "$deadline" ]]; then break; fi
+    sleep 5
+  done
+  if [[ "$answered" -eq 1 ]]; then
+    echo "FAIL: $active downloads still active after ${DRAIN_TIMEOUT}s; re-run later or pass --force"
+  else
+    echo "FAIL: MeTube not answering at $METUBE_URL/history; pass --force to restart anyway"
+  fi
+  return 1
+}
+
+restart() {  # 4) Restart the same container. Only restart, exec and inspect are used.
+  local before after id0 start0 id1 start1 out rc
+  before=$(docker inspect -f '{{.Id}} {{.State.StartedAt}}' "$CONTAINER" 2>/dev/null || true)
+  if [[ -z "$before" ]]; then
+    echo "FAIL: container $CONTAINER not found"
+    die
+  fi
+  read -r id0 start0 <<<"$before"
+  out=$(docker restart "$CONTAINER" 2>&1) && rc=0 || rc=$?
+  after=$(docker inspect -f '{{.Id}} {{.State.StartedAt}}' "$CONTAINER" 2>/dev/null || true)
+  read -r id1 start1 <<<"$after"
+  if [[ "$rc" -eq 0 && "$id1" == "$id0" && -n "$start1" && "$start1" != "$start0" ]]; then
+    echo "ok: restarted metube (same container)"
+  else
+    echo "FAIL: docker restart $CONTAINER (exit $rc: ${out//$'\n'/ }; id ${id0:0:12} -> ${id1:0:12}, started $start0 -> ${start1:-?})"
+    die
+  fi
+}
+
+if [[ "$check" -eq 1 ]]; then
+  echo "ok: restart skipped (--check)"
 else
-  echo "FAIL: docker restart $CONTAINER (exit $rc: ${out//$'\n'/ }; id ${id0:0:12} -> ${id1:0:12}, started $start0 -> ${start1:-?})"
-  die
+  if [[ "$force" -eq 1 ]]; then
+    echo "ok: active-download check skipped (--force)"
+  else
+    drain || die
+  fi
+  restart
 fi
 
 # 5) MeTube answers again. The later steps need the container.
@@ -206,11 +263,13 @@ else
 fi
 
 # 9) --smoke: submit the reference URL like the web UI and check the saved file.
-smoke_run() {  # $1 = video
+smoke_run() {  # $1 = video | audio
   local mode=$1 dtype fmt ext want_codec prefix existing pre='' body resp st msg
   local h entry state='' emsg files f problems=() acodec vstreams ftitle fartist fdur now
   case $mode in
     video) dtype=video; fmt=any; ext=m4a; want_codec=aac ;;
+    # MeTube's audio mode re-encodes with FFmpegExtractAudio (PITFALLS 6).
+    audio) dtype=audio; fmt=mp3; ext=mp3; want_codec=mp3 ;;
   esac
   prefix="audiocom-smoke-$mode-$(date +%s)"
   existing="$METUBE_DOWNLOADS/$TITLE.m4a"
