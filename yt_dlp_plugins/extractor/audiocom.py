@@ -45,6 +45,25 @@ class AudioComIE(InfoExtractor):
             'repost_count': int,
         },
     }, {
+        'url': 'https://audio.com/jasa-sisemore/audio/jasasisemore-audacitypractice-autoduck-assignment-4aup',
+        'info_dict': {
+            'id': '1782423994666898',
+            'ext': 'mp3',
+            'display_id': 'jasasisemore-audacitypractice-autoduck-assignment-4aup',
+            'title': 'JasaSisemore_AudacityPractice_AUTODUCK_assignment 4.aup',
+            'uploader': 'Jasa Sisemore',
+            'uploader_id': 'jasa-sisemore',
+            'uploader_url': 'https://audio.com/jasa-sisemore',
+            'duration': 44.722,
+            'timestamp': 1699851984,
+            'upload_date': '20231113',
+            'tags': 'count:5',
+            'view_count': int,
+            'like_count': int,
+            'comment_count': int,
+            'repost_count': int,
+        },
+    }, {
         'url': 'https://www.audio.com/David-Oliveira-1877766671108274/audio/rusted-pitchfork-dana-liske-uncut-version-astrayal-best/?utm_source=share',
         'only_matching': True,
     }]
@@ -55,13 +74,22 @@ class AudioComIE(InfoExtractor):
         return f'https://audio.com/{user.lower()}/audio/{slug.lower()}'
 
     def _call_api(self, path, video_id, note, **kwargs):
-        # A 404 is a deleted, private or mistyped track: a user error, not a bug,
-        # so it must not carry yt-dlp's "report this issue" text (wrong project).
+        # A missing or restricted track is a user-side condition, not a bug, so the
+        # error is expected: one line, no traceback and no "report this issue" text
+        # (which would point at the wrong project). The HTTPError is not attached as
+        # cause, because yt-dlp would append "(caused by ...)" to the line; -v still
+        # shows the request. Other statuses keep yt-dlp's own error.
         try:
             return self._download_json(f'{self._API_BASE}/{path}', video_id, note, **kwargs)
         except ExtractorError as e:
-            if isinstance(e.cause, HTTPError) and e.cause.status == 404:
-                raise ExtractorError('Track not found, private, or removed', expected=True)
+            if isinstance(e.cause, HTTPError):
+                if e.cause.status in (404, 410):
+                    raise ExtractorError(
+                        'This audio.com track is unavailable (removed, private, or wrong URL)',
+                        video_id=video_id, expected=True)
+                if e.cause.status in (401, 403):  # never seen anonymously; a guard
+                    raise ExtractorError(
+                        'This audio.com track is private or restricted', video_id=video_id, expected=True)
             raise
 
     def _real_extract(self, url):
@@ -73,12 +101,12 @@ class AudioComIE(InfoExtractor):
             r'/embed/audio/(\d+)(?:[/?#]|$)', traverse_obj(oembed, ('iframe_url', {str})) or '', 'track id',
             fatal=False)
         if not track_id:
-            raise ExtractorError('oEmbed returned no embed URL for this track', expected=True)
+            raise ExtractorError('oEmbed returned no embed URL for this track', video_id=slug, expected=True)
         data = self._call_api(f'audio/{track_id}', track_id, 'Downloading track JSON')
         # str_or_none: an integer id must not bypass the mismatch check.
         returned_id = traverse_obj(data, ('id', {str_or_none}))
         if returned_id != track_id:
-            raise ExtractorError(f'API returned track {returned_id}, expected {track_id}')
+            raise ExtractorError(f'API returned track {returned_id}, expected {track_id}', video_id=track_id)
 
         formats = []
         for t in traverse_obj(data, ('transcodings', lambda _, v: url_or_none(v['url']))):
@@ -107,7 +135,7 @@ class AudioComIE(InfoExtractor):
                 }),
             })
         if not formats:
-            raise ExtractorError('No playable transcodings found', expected=True)
+            raise ExtractorError('No playable transcodings found', video_id=track_id, expected=True)
 
         # author_name is '' on some tracks; fall back to the username (D-11).
         username = traverse_obj(data, ('username', {str}, filter)) or user.lower()
