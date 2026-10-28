@@ -94,9 +94,14 @@ def test_mutation_empty_author_name_falls_back_to_username(monkeypatch):
     assert _extract_mutated(monkeypatch, data)['uploader'] == 'david-oliveira-1877766671108274'
 
 
-def test_tests_info_dict_matches_offline_reference(monkeypatch):
-    test = AudioComIE._TESTS[0]
-    data = _reference()
+DOWNLOADABLE_TESTS = [t for t in AudioComIE._TESTS if not t.get('only_matching')]
+_TEST_IDS = [t['info_dict']['id'] for t in DOWNLOADABLE_TESTS]
+
+
+@pytest.mark.parametrize('test', DOWNLOADABLE_TESTS, ids=_TEST_IDS)
+def test_tests_info_dict_matches_offline_fixture(monkeypatch, test):
+    # PLUG-03: every live _TESTS entry replays against its recorded fixture.
+    data = load_fixture(test['info_dict']['id'])
     assert test['url'] == data['url']
     patch_api(monkeypatch, data['oembed'], data['audio'])
     _, processed = run_extract(test['url'])
@@ -109,6 +114,18 @@ def test_tests_info_dict_matches_offline_reference(monkeypatch):
             assert processed[key] == expected, key
 
 
+def test_tests_cover_reference_and_jasa_only():
+    # D-08: live _TESTS use only the reference and the 2023 jasa-sisemore track.
+    assert {t['url'] for t in DOWNLOADABLE_TESTS} == {
+        load_fixture(REFERENCE_ID)['url'],
+        'https://audio.com/jasa-sisemore/audio/jasasisemore-audacitypractice-autoduck-assignment-4aup',
+    }
+    assert len(DOWNLOADABLE_TESTS) == 2
+    assert AudioComIE._TESTS[-1].get('only_matching') is True
+    assert [t for t in AudioComIE._TESTS[:-1] if t.get('only_matching')] == []
+
+
+@pytest.mark.parametrize('test', DOWNLOADABLE_TESTS, ids=_TEST_IDS)
 @pytest.mark.parametrize('key', ['thumbnail', 'description', 'md5'])
-def test_tests_info_dict_omits_absent_fields(key):
-    assert key not in AudioComIE._TESTS[0]['info_dict']
+def test_tests_info_dict_omits_absent_fields(key, test):
+    assert key not in test['info_dict']

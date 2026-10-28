@@ -45,6 +45,25 @@ class AudioComIE(InfoExtractor):
             'repost_count': int,
         },
     }, {
+        'url': 'https://audio.com/jasa-sisemore/audio/jasasisemore-audacitypractice-autoduck-assignment-4aup',
+        'info_dict': {
+            'id': '1782423994666898',
+            'ext': 'mp3',
+            'display_id': 'jasasisemore-audacitypractice-autoduck-assignment-4aup',
+            'title': 'JasaSisemore_AudacityPractice_AUTODUCK_assignment 4.aup',
+            'uploader': 'Jasa Sisemore',
+            'uploader_id': 'jasa-sisemore',
+            'uploader_url': 'https://audio.com/jasa-sisemore',
+            'duration': 44.722,
+            'timestamp': 1699851984,
+            'upload_date': '20231113',
+            'tags': 'count:5',
+            'view_count': int,
+            'like_count': int,
+            'comment_count': int,
+            'repost_count': int,
+        },
+    }, {
         'url': 'https://www.audio.com/David-Oliveira-1877766671108274/audio/rusted-pitchfork-dana-liske-uncut-version-astrayal-best/?utm_source=share',
         'only_matching': True,
     }]
