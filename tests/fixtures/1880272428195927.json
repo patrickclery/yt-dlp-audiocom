@@ -1,0 +1,53 @@
+{
+ "audio": {
+  "author_name": "",
+  "avatar": "",
+  "date_created": 1793167522,
+  "description": "",
+  "id": "1880272428195927",
+  "image": "https://audio.com/s3w/audio.com.static/audio/image/27/59/1880272428195927-1880272718928578.jpeg",
+  "stats": {
+   "comments_count": 0,
+   "likes_count": 0,
+   "plays_count": 0,
+   "shares_count": 0
+  },
+  "tags": [
+   "folk world country",
+   "indian classical",
+   "music",
+   "sitar",
+   "carnatic music"
+  ],
+  "title": "5-Song track ChidanandaRoopam (F)",
+  "transcodings": [
+   {
+    "bit_rate": 192000,
+    "channels": 2,
+    "codec": "mp3",
+    "duration": 304464,
+    "format": "mp3",
+    "sample_rate": 48000,
+    "size": 7307712,
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/27/59/1880272428195927-1880272428233402-1880272431577916.mp3"
+   },
+   {
+    "bit_rate": 322848,
+    "channels": 2,
+    "codec": "aac",
+    "duration": 304440,
+    "format": "m4a",
+    "sample_rate": 48000,
+    "size": 12344914,
+    "type": "audio/m4a",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/27/59/1880272428195927-1880272428233402-1880272431599193.m4a"
+   }
+  ],
+  "username": "roshimakr21"
+ },
+ "oembed": {
+  "iframe_url": "https://audio.com/embed/audio/1880272428195927"
+ },
+ "url": "https://audio.com/roshimakr21/audio/5-song-track-chidanandaroopam-f"
+}

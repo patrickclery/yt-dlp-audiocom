@@ -1,0 +1,42 @@
+{
+ "audio": {
+  "author_name": "Jasa Sisemore",
+  "avatar": "",
+  "date_created": 1699851984,
+  "description": "",
+  "id": "1782423994666898",
+  "image": "",
+  "stats": {
+   "comments_count": 0,
+   "likes_count": 0,
+   "plays_count": 0,
+   "shares_count": 0
+  },
+  "tags": [
+   "speech",
+   "drum",
+   "drum kit",
+   "music",
+   "snare drum"
+  ],
+  "title": "JasaSisemore_AudacityPractice_AUTODUCK_assignment 4.aup",
+  "transcodings": [
+   {
+    "bit_rate": 320000,
+    "channels": 2,
+    "codec": "mp3",
+    "duration": 44722,
+    "format": "mp3",
+    "sample_rate": 44100,
+    "size": 1789954,
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/98/68/1782423994666898-1782423996115233-1782424025457533.mp3"
+   }
+  ],
+  "username": "jasa-sisemore"
+ },
+ "oembed": {
+  "iframe_url": "https://audio.com/embed/audio/1782423994666898"
+ },
+ "url": "https://audio.com/jasa-sisemore/audio/jasasisemore-audacitypractice-autoduck-assignment-4aup"
+}

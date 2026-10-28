@@ -1,0 +1,53 @@
+{
+ "audio": {
+  "author_name": "",
+  "avatar": "",
+  "date_created": 1793168211,
+  "description": "",
+  "id": "1880273150344633",
+  "image": "",
+  "stats": {
+   "comments_count": 0,
+   "likes_count": 0,
+   "plays_count": 0,
+   "shares_count": 0
+  },
+  "tags": [
+   "speech",
+   "mantra",
+   "sigh",
+   "male singing",
+   "male speech"
+  ],
+  "title": "زيد ارشادات",
+  "transcodings": [
+   {
+    "bit_rate": 192000,
+    "channels": 2,
+    "codec": "mp3",
+    "duration": 153574,
+    "format": "mp3",
+    "sample_rate": 44100,
+    "size": 3686399,
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/33/46/1880273150344633-1880273150376460-1880273153585643.mp3"
+   },
+   {
+    "bit_rate": 222489,
+    "channels": 2,
+    "codec": "aac",
+    "duration": 153537,
+    "format": "m4a",
+    "sample_rate": 44100,
+    "size": 4298014,
+    "type": "audio/m4a",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/33/46/1880273150344633-1880273150376460-1880273153606683.m4a"
+   }
+  ],
+  "username": "james-gant"
+ },
+ "oembed": {
+  "iframe_url": "https://audio.com/embed/audio/1880273150344633"
+ },
+ "url": "https://audio.com/james-gant/audio/zyd-arshadat"
+}

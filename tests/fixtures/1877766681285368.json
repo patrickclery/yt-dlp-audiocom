@@ -1,0 +1,53 @@
+{
+ "audio": {
+  "author_name": "David Oliveira",
+  "avatar": "",
+  "date_created": 1790777856,
+  "description": "",
+  "id": "1877766681285368",
+  "image": "",
+  "stats": {
+   "comments_count": 0,
+   "likes_count": 26,
+   "plays_count": 5620,
+   "shares_count": 49
+  },
+  "tags": [
+   "music",
+   "effects unit",
+   "distortion",
+   "guitar",
+   "plucked string instrument"
+  ],
+  "title": "Rusted Pitchfork — Dana Liske (Uncut Version) - Astrayal best",
+  "transcodings": [
+   {
+    "bit_rate": 192000,
+    "channels": 2,
+    "codec": "mp3",
+    "duration": 186358,
+    "format": "mp3",
+    "sample_rate": 44100,
+    "size": 4473207,
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/68/53/1877766681285368-1877766681319861-1877766722995136.mp3"
+   },
+   {
+    "bit_rate": 306343,
+    "channels": 2,
+    "codec": "aac",
+    "duration": 186331,
+    "format": "m4a",
+    "sample_rate": 44100,
+    "size": 7169078,
+    "type": "audio/m4a",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/68/53/1877766681285368-1877766681319861-1877766723013898.m4a"
+   }
+  ],
+  "username": "david-oliveira-1877766671108274"
+ },
+ "oembed": {
+  "iframe_url": "https://audio.com/embed/audio/1877766681285368"
+ },
+ "url": "https://audio.com/david-oliveira-1877766671108274/audio/rusted-pitchfork-dana-liske-uncut-version-astrayal-best"
+}
