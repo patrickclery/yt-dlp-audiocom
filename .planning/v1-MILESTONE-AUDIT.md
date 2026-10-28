@@ -1,0 +1,60 @@
+---
+milestone: v1
+audited: 2026-10-28
+status: passed
+scores:
+  requirements: 12/12
+  phases: 3/3
+  integration: 4/4
+  flows: 3/3
+gaps:
+  requirements: []
+  integration: []
+  flows: []
+tech_debt:
+  - phase: 01-track-downloads-via-yt-dlp
+    items:
+      - "SUMMARY frontmatter lacked requirements-completed (backfilled during audit)"
+      - "Code review INFO items left open (01-REVIEW.md)"
+  - phase: 02-edge-cases-and-version-compatibility
+    items:
+      - "02-02-SUMMARY body mentions EXTR-04 but frontmatter lists only PLUG-02 (EXTR-04 recorded in 02-03)"
+      - "Code review INFO items left open (02-REVIEW.md); removed-track and 401/403 handling assumed (not observable anonymously)"
+      - "Live _TESTS depend on two third-party audio.com tracks staying online"
+  - phase: 03-metube-deploy
+    items:
+      - "SUMMARY frontmatter lacked requirements-completed (backfilled during audit)"
+      - "Interrupted/parallel MeTube downloads untested (needs restart)"
+      - "SECURITY.md never produced for any phase (/gsd-secure-phase not run)"
+---
+
+# Milestone v1 Audit — audio.com yt-dlp Extractor
+
+**Status: passed.** All 12 v1 requirements are satisfied, all three phases verified `passed` (with human UAT sign-off), and cross-phase integration is fully wired.
+
+## Requirements
+
+| REQ | Phase | Verification | Final |
+|-----|-------|--------------|-------|
+| EXTR-01, EXTR-02, EXTR-03, EXTR-05, PLUG-01 | 1 | passed | satisfied |
+| EXTR-04, EXTR-06, PLUG-02, PLUG-03 | 2 | passed | satisfied |
+| METB-01, METB-02, METB-03 | 3 | passed | satisfied |
+
+METB-02: integration checker ran read-only (`--check`, no new download), but Phase 3 verification confirmed three MeTube-produced files with ffprobe and the user signed off UAT — satisfied.
+
+## Integration (all WIRED)
+
+- Deployed MeTube plugin is byte-identical (sha256) to the repo extractor, including Phase 2 fixes; `rumble_fix.py` intact.
+- README flags/pins match `scripts/test-live.sh`, `scripts/run_live_tests.py`, `scripts/deploy-metube.sh` and both venvs.
+- Offline suite: 384 passed / 120 skipped on yt-dlp 2026.10.26 and 2026.8.19; `scripts/test-live.sh` → ALL TARGETS PASSED.
+- `scripts/deploy-metube.sh --check` → DEPLOY OK.
+
+## Flows
+
+1. CLI: `yt-dlp <audio.com URL>` with plugin → tagged highest-bitrate file. ✓
+2. CLI: `-f original` on downloadable track → original file; never offered otherwise. ✓
+3. MeTube: paste URL → tagged file in Plex downloads folder. ✓
+
+## Tech debt
+
+See frontmatter. None blocking.

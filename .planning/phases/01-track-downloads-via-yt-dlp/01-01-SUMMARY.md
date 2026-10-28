@@ -1,4 +1,5 @@
 ---
+requirements-completed: [EXTR-01, EXTR-02, EXTR-03, PLUG-01]
 phase: 01-track-downloads-via-yt-dlp
 plan: 01
 subsystem: extractor

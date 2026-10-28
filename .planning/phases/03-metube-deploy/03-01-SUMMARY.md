@@ -1,4 +1,5 @@
 ---
+requirements-completed: [METB-01, METB-02, METB-03]
 phase: 03-metube-deploy
 plan: 01
 subsystem: deploy
