@@ -25,6 +25,13 @@ Harden the Phase 1 `AudioComIE` plugin: offer the original upload only for downl
 - Private/unlisted behavior probed anonymously only; no account login, no creating test tracks. Record observed responses in RESEARCH
 - Live `_TESTS` use only the reference track and the 2023 `jasa-sisemore/...` track; other sampled tracks stay offline-fixture-only
 
+### Revised after research (2026-10-28)
+- `is_public: false` means UNLISTED and plays anonymously — never raise on it. Keep 401/403 → expected 'private/restricted' message only as a guard (never observed)
+- All observed failures are 404 JSON; pass `video_id=` so the error is one line `ERROR: [AudioCom] <id>: ...`
+- Multi-version tracks: keep only the newest upload's transcodings, and take duration from it (bug: louder-jazz-bababa reported 240 s vs 314 s)
+- Originals: `format_id` `original*` with `preference: -10` (NOT `quality: -1`) keeps it opt-in under default, `ba`, `-S abr`, `-S size`; skip `wv` in the extractor; do a 1-byte Range GET to drop originals that 404 (HEAD returns 403)
+- Live runner recipe per 02-RESEARCH.md (sparse-clone `test/` at zero-padded tag, verify SHA, `load_all_plugins()`; avoid full clone shadowing installed `yt_dlp`; no `grep -q` under pipefail)
+
 ### Claude's Discretion
 - Exact `format_id` naming for originals, README layout, script internals
 
