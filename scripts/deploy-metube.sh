@@ -3,17 +3,22 @@
 #
 # Checks that the plugin file the user installed in MeTube's host plugin
 # directory is identical to this repo's yt_dlp_plugins/extractor/audiocom.py,
-# waits until MeTube has no active download, restarts the metube container
-# (same container, no recreate), and checks inside it that yt-dlp loads
+# waits until MeTube has no active download, restarts MeTube through its
+# systemd unit metube.service, and checks inside it that yt-dlp loads
 # AudioComIE next to the existing Rumble plugins and extracts the reference
 # track. With --smoke it also submits the reference track to MeTube the way the
 # web UI does and checks the saved file.
 #
-# This script never runs sudo. When the installed file is missing or out of
-# date it only prints the one sudo install command for the user to run, and
-# stops before any restart. Its only state changes are `docker restart metube`
-# and, with --smoke, one new download named audiocom-smoke-<mode>-<epoch>.<title>
-# in the download folder. It never deletes, moves or overwrites any file.
+# The restart is `sudo systemctl restart metube.service`, never `docker
+# restart`: the unit runs tank-service-guard before every start (so MeTube never
+# binds an empty, unmounted /tank dir) and stops the container with a 60 s
+# timeout. The script runs the same guard first, unprivileged, so a refusal
+# stops the run while MeTube is still up. That systemctl call is the only sudo
+# it runs. When the installed file is missing or out of date it only prints the
+# one sudo install command for the user to run, and stops before any restart.
+# Its only state changes are that restart (plus the guard's journal line) and,
+# with --smoke, one new download named audiocom-smoke-<mode>-<epoch>.<title> in
+# the download folder. It never deletes, moves or overwrites any file.
 #
 # Usage: scripts/deploy-metube.sh [--check] [--force] [--smoke video|audio]
 #   (no option)    install check, wait for active downloads, restart, load checks
@@ -47,6 +52,11 @@ METUBE_URL=${METUBE_URL:-http://127.0.0.1:8085}
 METUBE_URL=${METUBE_URL%/}
 METUBE_DOWNLOADS=${METUBE_DOWNLOADS:-/tank/docker/metube/downloads}
 CONTAINER=metube
+SERVICE=metube.service
+# The guard and arguments of metube.service's ExecStartPre (systemctl cat metube).
+GUARD=/usr/local/bin/tank-service-guard
+GUARD_ARGS=(--mount /tank/docker --sentinel /tank/docker/metube/downloads
+  --sentinel /var/lib/docker-data/metube/state)
 REF='https://audio.com/david-oliveira-1877766671108274/audio/rusted-pitchfork-dana-liske-uncut-version-astrayal-best'
 REF_SLUG=${REF##*/}
 # Whole word, so a lookalike such as AudioComFooIE does not count.
@@ -168,21 +178,34 @@ drain() {
   return 1
 }
 
-restart() {  # 4) Restart the same container. Only restart, exec and inspect are used.
-  local before after id0 start0 id1 start1 out rc
+restart() {  # 4) Restart through metube.service, which owns every MeTube start.
+  local before after id0 start0 id1 start1 running out rc gout note=''
   before=$(docker inspect -f '{{.Id}} {{.State.StartedAt}}' "$CONTAINER" 2>/dev/null || true)
   if [[ -z "$before" ]]; then
     echo "FAIL: container $CONTAINER not found"
     die
   fi
   read -r id0 start0 <<<"$before"
-  out=$(docker restart "$CONTAINER" 2>&1) && rc=0 || rc=$?
-  after=$(docker inspect -f '{{.Id}} {{.State.StartedAt}}' "$CONTAINER" 2>/dev/null || true)
-  read -r id1 start1 <<<"$after"
-  if [[ "$rc" -eq 0 && "$id1" == "$id0" && -n "$start1" && "$start1" != "$start0" ]]; then
-    echo "ok: restarted metube (same container)"
+  # The unit stops the container before its guard runs, so a refusal there
+  # would leave MeTube down. Run the guard first and stop here instead.
+  if [[ ! -x "$GUARD" ]]; then
+    echo "FAIL: $GUARD not found; not restarting"
+    die
+  fi
+  if ! gout=$("$GUARD" --name metube-deploy-precheck "${GUARD_ARGS[@]}" 2>&1); then
+    echo "FAIL: tank-service-guard refused, MeTube left running: ${gout//$'\n'/ }"
+    die
+  fi
+  echo "ok: tank-service-guard passed"
+  out=$(sudo systemctl restart "$SERVICE" 2>&1) && rc=0 || rc=$?
+  after=$(docker inspect -f '{{.Id}} {{.State.StartedAt}} {{.State.Running}}' "$CONTAINER" 2>/dev/null || true)
+  read -r id1 start1 running <<<"$after"
+  if [[ "$rc" -eq 0 && "$running" == true && -n "$start1" && "$start1" != "$start0" ]]; then
+    # compose recreates the container only when its config or image changed.
+    if [[ "$id1" != "$id0" ]]; then note=", container recreated by compose"; fi
+    echo "ok: restarted MeTube through $SERVICE$note"
   else
-    echo "FAIL: docker restart $CONTAINER (exit $rc: ${out//$'\n'/ }; id ${id0:0:12} -> ${id1:0:12}, started $start0 -> ${start1:-?})"
+    echo "FAIL: sudo systemctl restart $SERVICE (exit $rc: ${out//$'\n'/ }; id ${id0:0:12} -> ${id1:0:12}, started $start0 -> ${start1:-?}, running ${running:-?}); see systemctl status $SERVICE"
     die
   fi
 }
