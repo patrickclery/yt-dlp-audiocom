@@ -4,6 +4,8 @@ import pathlib
 
 import pytest
 
+from scripts.record_fixture import RefusedError, check_record, project
+
 FIXTURE_DIR = pathlib.Path(__file__).parent / 'fixtures'
 FIXTURES = sorted(FIXTURE_DIR.glob('*.json'))
 
@@ -77,3 +79,38 @@ def test_shape_coverage():
     assert any(a['author_name'] == '' for a in audios), 'empty author_name'
     assert any(a['image'] for a in audios), 'non-empty image'
     assert any(a['description'] for a in audios), 'non-empty description'
+
+
+def _reference_captured():
+    data = _load(FIXTURE_DIR / '1877766681285368.json')
+    return data['url'], {'oembed': data['oembed'], 'audio': data['audio']}
+
+
+def test_recorder_projection_accepts_reference():
+    url, captured = _reference_captured()
+    check_record(project(url, captured))
+
+
+@pytest.mark.parametrize(('key', 'value'), [
+    ('stats', ['https://cdn.example/x?sig=abc']),
+    ('transcodings', {'mp3': {'url': 'https://cdn.example/a.mp3?sig=abc'}}),
+    ('transcodings', ['https://cdn.example/a.mp3?sig=abc']),
+    ('image', {'url': 'https://cdn.example/i.jpg?sig=abc'}),
+    ('avatar', ['https://cdn.example/i.jpg?sig=abc']),
+])
+def test_recorder_refuses_unexpected_shapes(key, value):
+    url, captured = _reference_captured()
+    captured['audio'][key] = value
+    with pytest.raises(RefusedError):
+        project(url, captured)
+
+
+@pytest.mark.parametrize('description', [
+    'Stream: https://cdn.example/a.mp3?sv=2024&se=2026&sp=r&sig=abc',
+    'More at https://example.com/page#section',
+])
+def test_recorder_refuses_urls_with_query_in_free_text(description):
+    url, captured = _reference_captured()
+    captured['audio']['description'] = description
+    with pytest.raises(RefusedError):
+        check_record(project(url, captured))
