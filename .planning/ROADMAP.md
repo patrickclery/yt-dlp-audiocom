@@ -78,7 +78,11 @@ Plans:
   2. Pasting the reference audio.com URL into MeTube produces a playable audio file with the correct title in the download folder.
   3. The README covers install, update, and the step to delete the plugin once bundled yt-dlp includes `[audiocom]`. Following its install steps reproduces the working deploy.
 
-**Plans**: TBD
+**Plans:** 1 plan
+
+Plans:
+**Wave 1**
+- [ ] 03-01-PLAN.md — User runs the sudo install (blocking checkpoint). Tracer: `scripts/deploy-metube.sh` restarts MeTube, checks the plugin loads, and a MeTube smoke submission saves a fresh tagged m4a. Then: README MeTube install/update/remove, a restart guard for active downloads, `--check`, and audio-mode mp3
 
 ## Progress
 
@@ -89,4 +93,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. Track Downloads via yt-dlp | 2/2 | Complete    | 2026-10-28 |
 | 2. Edge Cases and Version Compatibility | 3/3 | Complete    | 2026-10-28 |
-| 3. MeTube Deploy | 0/TBD | Not started | - |
+| 3. MeTube Deploy | 0/1 | Planned | - |
