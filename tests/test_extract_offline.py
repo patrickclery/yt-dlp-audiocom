@@ -36,6 +36,7 @@ RESTRICTED = 'This audio.com track is private or restricted'
 OEMBED_404_BODY = b'{"name": "Not Found", "message": "Resource not found!", "code": 0, "status": 404}'
 AUDIO_404_BODY = b'{"name": "Not Found", "message": "Audio not found!", "code": 0, "status": 404}'
 REASONS = {401: 'Unauthorized', 403: 'Forbidden', 404: 'Not Found', 410: 'Gone', 500: 'Internal Server Error'}
+JSON = {'Content-Type': 'application/json; charset=UTF-8'}
 # endpoint: (failing URL, video_id the error must carry, 404 body)
 ENDPOINTS = {
     'oembed': (f'{API}/oembed', REFERENCE_SLUG, OEMBED_404_BODY),
@@ -261,7 +262,7 @@ def test_edge_iframe_url_without_digits(monkeypatch):
     assert err.video_id == REFERENCE_SLUG
 
 
-def _patch_http_error(monkeypatch, failing_url, status, body=b''):
+def _patch_http_error(monkeypatch, failing_url, status, body=b'', headers=JSON):
     """Serve the reference fixture, except `failing_url`, which fails with HTTP `status`."""
     data = _reference()
     patch_api(monkeypatch, data['oembed'], data['audio'])
@@ -269,7 +270,7 @@ def _patch_http_error(monkeypatch, failing_url, status, body=b''):
 
     def fake(self, url_or_request, video_id, *args, **kwargs):
         if url_or_request == failing_url:
-            response = Response(io.BytesIO(body), url_or_request, {}, status=status, reason=REASONS[status])
+            response = Response(io.BytesIO(body), url_or_request, headers, status=status, reason=REASONS[status])
             raise ExtractorError(f'HTTP Error {status}: {REASONS[status]}', cause=HTTPError(response))
         return served(self, url_or_request, video_id, *args, **kwargs)
 
@@ -277,9 +278,9 @@ def _patch_http_error(monkeypatch, failing_url, status, body=b''):
     return data
 
 
-def _http_error(monkeypatch, endpoint, status):
+def _http_error(monkeypatch, endpoint, status, headers=JSON):
     failing_url, _, body_404 = ENDPOINTS[endpoint]
-    data = _patch_http_error(monkeypatch, failing_url, status, body_404 if status == 404 else b'')
+    data = _patch_http_error(monkeypatch, failing_url, status, body_404 if status == 404 else b'', headers)
     return _raises_extractor_error(data['url'])
 
 
@@ -305,6 +306,27 @@ def test_edge_unavailable_is_one_line_expected_error(monkeypatch, endpoint, stat
 @pytest.mark.parametrize('endpoint', list(ENDPOINTS))
 def test_edge_restricted_is_one_line_expected_error(monkeypatch, endpoint, status):
     _assert_one_line_expected(_http_error(monkeypatch, endpoint, status), RESTRICTED, ENDPOINTS[endpoint][1])
+
+
+# WR-05: a Cloudflare challenge or block page is a site-side failure, not a
+# restricted track, so it keeps yt-dlp's own (reportable) error.
+CLOUDFLARE = {
+    'html': {'Content-Type': 'text/html; charset=UTF-8', 'Server': 'cloudflare'},
+    'challenge': {'Content-Type': 'text/html', 'cf-mitigated': 'challenge'},
+    'json-mitigated': {**JSON, 'CF-Mitigated': 'challenge'},
+    'no-type': {},
+}
+
+
+@pytest.mark.parametrize('headers', list(CLOUDFLARE.values()), ids=list(CLOUDFLARE))
+@pytest.mark.parametrize('status', [401, 403])
+@pytest.mark.parametrize('endpoint', list(ENDPOINTS))
+def test_edge_non_api_403_is_reraised_unchanged(monkeypatch, endpoint, status, headers):
+    err = _http_error(monkeypatch, endpoint, status, headers)
+    assert err.orig_msg not in (UNAVAILABLE, RESTRICTED)
+    assert f'HTTP Error {status}' in err.orig_msg
+    assert isinstance(err.cause, HTTPError) and err.cause.status == status
+    assert err.expected is False
 
 
 @pytest.mark.parametrize('endpoint', list(ENDPOINTS))

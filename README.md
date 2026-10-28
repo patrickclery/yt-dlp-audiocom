@@ -113,8 +113,10 @@ or its numeric id once known) and the cause, with no traceback:
   audio.com answered 404 or 410. The track was removed, the URL is mistyped, or
   the track is private to its owner.
 - `ERROR: [AudioCom] <slug or id>: This audio.com track is private or restricted`:
-  audio.com answered 401 or 403, so the track exists but is not available
-  anonymously.
+  audio.com's API answered 401 or 403 with JSON, so the track exists but is not
+  available anonymously. A 401 or 403 that is a Cloudflare challenge or block
+  page (HTML, or a `cf-mitigated` header) is not a track problem and keeps
+  yt-dlp's own `HTTP Error 403` message.
 
 Unlisted tracks (not shown on the uploader's profile, but playable by anyone with
 the link) download normally. Any other failure keeps yt-dlp's own error message.

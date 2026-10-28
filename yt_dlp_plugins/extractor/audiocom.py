@@ -109,6 +109,12 @@ class AudioComIE(InfoExtractor):
             return False
         return True
 
+    @staticmethod
+    def _is_api_answer(response):
+        # Response.headers is an email Message, so get() is case-insensitive.
+        return (not response.headers.get('cf-mitigated')
+                and 'json' in (response.headers.get('Content-Type') or '').lower())
+
     def _call_api(self, path, video_id, note, **kwargs):
         # A missing or restricted track is a user-side condition, not a bug, so the
         # error is expected: one line, no traceback and no "report this issue" text
@@ -123,7 +129,10 @@ class AudioComIE(InfoExtractor):
                     raise ExtractorError(
                         'This audio.com track is unavailable (removed, private, or wrong URL)',
                         video_id=video_id, expected=True)
-                if e.cause.status in (401, 403):  # never seen anonymously; a guard
+                # Never seen anonymously; a guard. Only a JSON answer from the API
+                # counts: a Cloudflare challenge or block page (HTML, cf-mitigated)
+                # is a site-side failure, so it keeps yt-dlp's own error.
+                if e.cause.status in (401, 403) and self._is_api_answer(e.cause.response):
                     raise ExtractorError(
                         'This audio.com track is private or restricted', video_id=video_id, expected=True)
             raise
