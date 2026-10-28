@@ -7,6 +7,96 @@ bundled yt-dlp) discovers through the `yt_dlp_plugins` namespace package. It
 targets yt-dlp 2026.10.26 (current stable) and 2026.08.19 (the version MeTube
 bundles).
 
+## MeTube
+
+MeTube loads the plugin from the host directory `/opt/metube/plugins`. The
+existing compose lines `/opt/metube/plugins:/plugins:ro` and `PYTHONPATH=/plugins`
+mount it read-only into the container. Those lines are already in place, so no
+compose change and no image rebuild is needed. The plugin survives image updates
+because it lives on the host.
+
+### Install
+
+Run from the repo root:
+
+```sh
+sudo install -m 644 yt_dlp_plugins/extractor/audiocom.py /opt/metube/plugins/yt_dlp_plugins/extractor/audiocom.py
+docker restart metube
+docker exec metube yt-dlp -v --simulate https://audio.com/david-oliveira-1877766671108274/audio/rusted-pitchfork-dana-liske-uncut-version-astrayal-best
+```
+
+In the `-v` output, `Extractor Plugins:` lists `AudioComIE` next to the Rumble
+plugins (`RumbleChannelIE`, `RumbleEmbedIE`, `RumbleIE`), the track is extracted
+by `[AudioCom]`, and no `Error while importing` line appears.
+
+`scripts/deploy-metube.sh` does the restart and these checks in one go. It
+waits for active downloads to finish first (up to `AUDIOCOM_DRAIN_TIMEOUT`
+seconds, default 300; `--force` skips the wait). When the installed file is
+missing or out of date it does not restart and prints the install command
+instead. It never runs sudo itself.
+
+`scripts/deploy-metube.sh --smoke video` (or `--smoke audio`) also submits the
+reference track to MeTube, the way the web UI does, and checks the saved file:
+codec, title and artist tags, and duration. That file is named
+`audiocom-smoke-<mode>-<epoch>.<title>.<ext>` and can be deleted afterwards.
+
+Rules:
+
+- Never add an `__init__.py` under `/opt/metube/plugins`. It turns
+  `yt_dlp_plugins` into a regular package and hides MeTube's bundled bgutil
+  plugins.
+- Never edit or remove `rumble_fix.py`, the other plugin in that directory.
+- Keep the installed file at mode 644.
+
+MeTube names files by title, so pasting a track that is already in the download
+folder makes yt-dlp skip it as already downloaded. Use a custom name prefix or
+delete the old file first.
+
+### Update
+
+After `git pull`, re-run the same install command, then `scripts/deploy-metube.sh`
+(or `docker restart metube` plus the `-v --simulate` check above):
+
+```sh
+sudo install -m 644 yt_dlp_plugins/extractor/audiocom.py /opt/metube/plugins/yt_dlp_plugins/extractor/audiocom.py
+scripts/deploy-metube.sh
+```
+
+After a MeTube image update (the container runs `:latest`, which can bump the
+bundled yt-dlp), check that the plugin still loads:
+
+```sh
+docker exec metube yt-dlp --version
+scripts/deploy-metube.sh --check
+scripts/test-live.sh
+```
+
+`--check` runs the install and plugin checks without restarting MeTube. Re-run
+`scripts/test-live.sh` too, and if MeTube's yt-dlp version is no longer one of
+the pinned versions, test the plugin against it.
+
+### Remove
+
+Remove the plugin once the bundled yt-dlp has its own audio.com extractor, that
+is once this prints a line:
+
+```sh
+docker exec metube yt-dlp --list-extractors | grep -i audiocom
+```
+
+Plugin extractors are not in that list, so it matches only a built-in one. If a
+future yt-dlp starts listing plugins there, add `--no-plugin-dirs` to the
+command. Then:
+
+```sh
+sudo rm /opt/metube/plugins/yt_dlp_plugins/extractor/audiocom.py
+docker restart metube
+```
+
+Confirm that the `docker exec metube yt-dlp -v --simulate <url>` command above no
+longer lists `AudioComIE` but still extracts the track. This mirrors the DELETE
+note at the top of `audiocom.py`.
+
 ## Development setup
 
 Two Python 3.11 venvs, one per supported yt-dlp version, built with
