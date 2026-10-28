@@ -28,7 +28,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Running `yt-dlp` on the reference URL, and on its `www.`, trailing-slash, and query-string variants, picks `[AudioCom]` (not `[generic]`) and downloads the track with no Cloudflare 403 and no impersonation. Collection, profile, and `/embed/` URLs are not matched.
   3. `yt-dlp -F` on the reference URL lists mp3 and m4a formats with correct ext, abr, and acodec, and no video codec.
   4. The downloaded file has title, uploader, uploader_id/url, duration in seconds, and upload date. Thumbnail, description, tags, and counts appear only for tracks that have them, checked against redacted fixtures recorded from at least 5 sampled tracks.
-**Plans**: TBD
+**Plans:** 2 plans
+
+Plans:
+- [ ] 01-01-PLAN.md — Walking skeleton: package-legitimacy gate, hatchling plugin scaffold plus two pinned venvs, tracer (reference URL → oEmbed → API → m4a), URL variants and negatives
+- [ ] 01-02-PLAN.md — Fixture recorder plus ≥5 redacted fixtures, highest-bitrate format selection, full metadata with uploader/thumbnail fallbacks
 **Research flag**: Sample at least 5 audio.com tracks for fixtures before finalizing the field mapping: `is_downloadable` true and false, with and without artwork, with and without description. Strip signatures and `app.*` config values.
 
 ### Phase 2: Edge Cases and Version Compatibility
