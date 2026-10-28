@@ -503,7 +503,7 @@ The new fixtures stay offline-only (per CONTEXT). Re-recording updates `stats` c
 | A4 | "Newest `date_created` wins" holds generally (verified on 2 multi-version tracks against `og:audio:url`) | Pattern 1 | A track whose list order and dates disagree could pick the wrong version |
 | A5 | flac/aiff/ogg originals behave like wav/mp3/m4a (not observed) | Finding 2 | Low; they are in `KNOWN_EXTENSIONS`/`ALLOWED_EXTENSIONS` |
 
-## Open Questions
+## Open Questions (RESOLVED — see 02-CONTEXT.md "Revised after research")
 
 1. **CONTEXT says "where the API distinguishes private (e.g. `is_public: false`, 403) use a more specific message".**
    - What we know: `is_public: false` tracks are public-by-link and play anonymously. The official spec says there are no private audio.
