@@ -6,6 +6,23 @@
   "description": "",
   "id": "1782423994666898",
   "image": "",
+  "is_downloadable": false,
+  "is_public": true,
+  "sources": [
+   {
+    "bit_rate": 1411200,
+    "channels": 2,
+    "codec": "pcm_s16le",
+    "date_created": 1699851986,
+    "duration": 44691,
+    "format": "wav",
+    "id": "1782423996115233",
+    "sample_rate": 44100,
+    "size": 7883592,
+    "type": "audio/wav",
+    "url": "https://s3.ustatik.com/audio.com.audio/source/98/68/1782423994666898-1782423996115233.wav"
+   }
+  ],
   "stats": {
    "comments_count": 0,
    "likes_count": 0,
@@ -29,6 +46,7 @@
     "format": "mp3",
     "sample_rate": 44100,
     "size": 1789954,
+    "source_id": "1782423996115233",
     "type": "audio/mpeg",
     "url": "https://s3.ustatik.com/audio.com.audio/transcoding/98/68/1782423994666898-1782423996115233-1782424025457533.mp3"
    }

@@ -18,6 +18,31 @@ def load_fixture(stem):
     return json.loads((FIXTURE_DIR / f'{stem}.json').read_text(encoding='utf-8'))
 
 
+def _date(source):
+    try:
+        return int(source.get('date_created'))
+    except (TypeError, ValueError):
+        return 0
+
+
+def current_transcodings(audio):
+    """The test oracle's statement of D-11: the transcodings of the newest upload.
+
+    Newest = largest integer date_created (missing or non-numeric counts as 0; a
+    tie goes to the later list entry). Returns the URL-bearing transcodings whose
+    source_id is that source's id, or every URL-bearing transcoding when there are
+    no sources or none match.
+    """
+    playable = [t for t in audio.get('transcodings') or [] if t.get('url')]
+    newest = None
+    for source in audio.get('sources') or []:
+        if source.get('id') and (newest is None or _date(source) >= _date(newest)):
+            newest = source
+    if newest is None:
+        return playable
+    return [t for t in playable if str(t.get('source_id')) == str(newest['id'])] or playable
+
+
 def patch_api(monkeypatch, oembed, audio, track_id=None):
     """Serve `oembed` and `audio` for the two API requests; any other URL fails the test.
 

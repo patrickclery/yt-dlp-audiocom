@@ -8,7 +8,7 @@ import pathlib
 
 import pytest
 
-from scripts.record_fixture import RefusedError, check_record, project
+from scripts.record_fixture import SOURCE_KEYS, RefusedError, check_record, project
 
 FIXTURE_DIR = pathlib.Path(__file__).parent / 'fixtures'
 FIXTURES = sorted(FIXTURE_DIR.glob('*.json'))
@@ -36,7 +36,12 @@ def test_passes_recorder_check(path):
     lambda r: r.update(extra={}),
     lambda r: r['audio'].update(title='Bearer token'),
     lambda r: r['audio'].update(title='https://cdn.example/a?x=1'),
-], ids=['audio-key', 'stats-key', 'transcoding-key', 'oembed-key', 'top-key', 'marker', 'query'])
+    lambda r: r['audio']['sources'][0].update(download='https://cdn.example/a.wv'),
+    lambda r: r['audio']['sources'][0].update(name='my mix final.wv'),
+    lambda r: r['audio']['sources'][0].update(md5='d41d8cd98f00b204e9800998ecf8427e'),
+    lambda r: r['audio'].update(sources={'wv': {'url': 'https://cdn.example/a.wv'}}),
+], ids=['audio-key', 'stats-key', 'transcoding-key', 'oembed-key', 'top-key', 'marker', 'query',
+        'sources-download', 'sources-name', 'sources-md5', 'sources-dict'])
 def test_recorder_check_rejects(mutate):
     rec = _load(FIXTURE_DIR / '1877766681285368.json')
     mutate(rec)
@@ -47,6 +52,19 @@ def test_recorder_check_rejects(mutate):
 @pytest.mark.parametrize('path', FIXTURES, ids=lambda p: p.stem)
 def test_stem_equals_audio_id(path):
     assert path.stem == _load(path)['audio']['id']
+
+
+@pytest.mark.parametrize('path', FIXTURES, ids=lambda p: p.stem)
+def test_download_flag_and_sources(path):
+    # The data invariant newest-source selection and the EXTR-04 gate rely on.
+    audio = _load(path)['audio']
+    assert isinstance(audio['is_downloadable'], bool)
+    assert isinstance(audio['is_public'], bool)
+    sources = audio['sources']
+    assert isinstance(sources, list) and sources
+    assert all(isinstance(s, dict) and s.get('id') for s in sources)
+    if len(sources) == 1:
+        assert {t.get('source_id') for t in audio['transcodings']} == {sources[0]['id']}
 
 
 def _bit_rate(audio, fmt):
@@ -60,6 +78,12 @@ def test_shape_coverage():
     assert any(a['author_name'] == '' for a in audios), 'empty author_name'
     assert any(a['image'] for a in audios), 'non-empty image'
     assert any(a['description'] for a in audios), 'non-empty description'
+    assert any(a['is_downloadable'] is True for a in audios), 'downloadable'
+    assert any(a['is_downloadable'] is False for a in audios), 'not downloadable'
+    source_formats = {s['format'] for a in audios for s in a['sources']}
+    assert {'wv', 'wav', 'mp3', 'm4a'} <= source_formats, 'source formats'
+    assert any(s['format'] == 'wav' and s['codec'] == 'wavpack' for a in audios for s in a['sources']), \
+        'wav served from a wavpack upload'
 
 
 def _reference_captured():
@@ -78,12 +102,31 @@ def test_recorder_projection_accepts_reference():
     ('transcodings', ['https://cdn.example/a.mp3?sig=abc']),
     ('image', {'url': 'https://cdn.example/i.jpg?sig=abc'}),
     ('avatar', ['https://cdn.example/i.jpg?sig=abc']),
+    ('sources', {'wv': {'url': 'https://cdn.example/a.wv?sig=abc'}}),
+    ('sources', ['https://cdn.example/a.wv?sig=abc']),
 ])
 def test_recorder_refuses_unexpected_shapes(key, value):
     url, captured = _reference_captured()
     captured['audio'][key] = value
     with pytest.raises(RefusedError):
         project(url, captured)
+
+
+def test_recorder_projection_drops_source_extras():
+    url, captured = _reference_captured()
+    source = captured['audio']['sources'][0]
+    source.update(
+        url=source['url'] + '?X-Amz-Expires=518400&X-Amz-Signature=abc#t=1',
+        download=source['url'] + '?response-content-disposition=attachment',
+        name='uploader original.wv', md5='d41d8cd98f00b204e9800998ecf8427e',
+        waveform=[0, 1, 2], date_updated=1, date_uploaded=1, **{'from': 'audacity'})
+    rec = project(url, captured)
+    projected = rec['audio']['sources'][0]
+    assert set(projected) <= set(SOURCE_KEYS)
+    assert not {'download', 'name', 'md5', 'from', 'waveform', 'date_updated', 'date_uploaded'} & set(projected)
+    assert '?' not in projected['url'] and '#' not in projected['url']
+    assert projected['url'] == source['url'].split('?', 1)[0]
+    check_record(rec)
 
 
 @pytest.mark.parametrize('description', [
