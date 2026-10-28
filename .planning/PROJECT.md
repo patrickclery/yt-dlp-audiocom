@@ -4,6 +4,14 @@
 
 A yt-dlp extractor for audio.com single-track pages (e.g. `https://audio.com/<user>/audio/<slug>`), so they can be downloaded programmatically. It ships as a yt-dlp plugin that Patrick's MeTube container loads, so pasting an audio.com link into MeTube just works.
 
+## Current State
+
+Shipped **v1.0** (2026-10-28): `AudioComIE` yt-dlp plugin (oEmbed → api.audio.com, highest-bitrate mp3/m4a, full metadata, opt-in `-f original`, one-line errors), verified on yt-dlp 2026.8.19 and 2026.10.26, deployed into MeTube at `/opt/metube/plugins` via `scripts/deploy-metube.sh`. ~384 offline tests + `scripts/test-live.sh`.
+
+## Next Milestone Goals
+
+- (Candidates) collections/playlists, profile downloads, embed URLs; optional public release of the plugin repo with the `yt-dlp-plugins` topic and an AI-assisted disclosure
+
 ## Core Value
 
 Pasting an audio.com track URL into MeTube (or `yt-dlp`) downloads the audio file with correct metadata.
@@ -12,13 +20,14 @@ Pasting an audio.com track URL into MeTube (or `yt-dlp`) downloads the audio fil
 
 ### Validated
 
-- ✓ yt-dlp plugin downloads audio.com single tracks (mp3/m4a, highest bitrate) with metadata, no impersonation — Phase 1
+- ✓ [v1.0] yt-dlp plugin downloads audio.com single tracks (mp3/m4a, highest bitrate) with metadata, no impersonation — Phase 1
 - ✓ Works on yt-dlp 2026.8.19 (MeTube) and 2026.10.26 — Phase 1
 - ✓ Opt-in `-f original` for downloadable tracks; one-line errors; newest-upload only; `scripts/test-live.sh` passes on both versions — Phase 2
 - ✓ Deployed into MeTube (`/opt/metube/plugins`); pasting an audio.com URL yields a tagged file in the Plex downloads folder; `scripts/deploy-metube.sh` installs/verifies via `systemctl restart metube.service` — Phase 3
 
 ### Active
 
+(None — v1.0 shipped; define next milestone with /gsd-new-milestone)
 
 ### Out of Scope
 
@@ -70,4 +79,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-28 after Phase 3*
+*Last updated: 2026-10-28 after v1.0 milestone*
