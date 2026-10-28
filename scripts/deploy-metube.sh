@@ -264,8 +264,10 @@ fi
 
 # 6) yt-dlp inside MeTube lists AudioComIE once, next to the Rumble plugins,
 # and no plugin failed to import.
-out=$(docker exec "$CONTAINER" yt-dlp -v --simulate \
-  --print '%(extractor_key)s|%(title)s|%(duration)s|%(uploader)s' "$REF" 2>&1) && yrc=0 || yrc=$?
+# The second --print is the title as yt-dlp writes it into a filename
+# (sanitized: / : | ? and so on become lookalikes), which the raw title is not.
+out=$(docker exec "$CONTAINER" yt-dlp -v --simulate -o 'AC_FILE=%(title)s' \
+  --print '%(extractor_key)s|%(title)s|%(duration)s|%(uploader)s' --print filename "$REF" 2>&1) && yrc=0 || yrc=$?
 plugins_line=$(grep -m 1 '^\[debug\] Extractor Plugins:' <<<"$out" || true)
 dirs_line=$(grep -m 1 '^\[debug\] Plugin directories:' <<<"$out" || true)
 import_errors=$(grep 'Error while importing' <<<"$out" || true)
@@ -294,7 +296,9 @@ fi
 
 # 8) AudioCom extracted the reference track. The title is the middle field, so
 # a '|' inside it cannot shift the duration or uploader.
-TITLE='' DURATION='' UPLOADER=''
+TITLE='' DURATION='' UPLOADER='' FILE_TITLE=''
+line=$(grep -m 1 '^AC_FILE=' <<<"$out" || true)
+FILE_TITLE=${line#AC_FILE=}
 line=$(grep -m 1 '^AudioCom|' <<<"$out" || true)
 if [[ -n "$line" ]]; then
   rest=${line#AudioCom|}
@@ -314,15 +318,25 @@ fi
 # 9) --smoke: submit the reference URL like the web UI and check the saved file.
 smoke_run() {  # $1 = video | audio
   local mode=$1 dtype fmt ext want_codec prefix existing pre='' body resp st msg
-  local h entry state='' emsg files f problems=() acodec vstreams ftitle fartist fdur now
+  local h entry state='' emsg fname files f problems=() acodec vstreams ftitle fartist fdur now
   case $mode in
     video) dtype=video; fmt=any; ext=m4a; want_codec=aac ;;
     # MeTube's audio mode re-encodes with FFmpegExtractAudio (PITFALLS 6).
     audio) dtype=audio; fmt=mp3; ext=mp3; want_codec=mp3 ;;
   esac
   prefix="audiocom-smoke-$mode-$(date +%s)"
-  existing="$METUBE_DOWNLOADS/$TITLE.m4a"
-  if [[ -f "$existing" ]]; then pre=$(stat -c '%s %Y' "$existing"); fi
+  if [[ -z "$FILE_TITLE" || "$FILE_TITLE" == */* ]]; then
+    echo "FAIL: yt-dlp gave no usable filename title for the reference track"
+    return 1
+  fi
+  # The unprefixed copy a plain web-UI download would have saved. When it is
+  # there, the smoke run must leave it untouched.
+  existing="$METUBE_DOWNLOADS/$FILE_TITLE.m4a"
+  if [[ -f "$existing" ]]; then
+    pre=$(stat -c '%s %Y' "$existing")
+  else
+    echo "note: no unprefixed copy at $existing; overwrite check not applicable"
+  fi
   marker=$(mktemp)
 
   # The web UI's own field names and default form values.
@@ -360,8 +374,14 @@ smoke_run() {  # $1 = video | audio
     return 1
   fi
 
+  # The saved name comes from MeTube's done entry, not from the raw title.
+  fname=$(jq -r '.filename // empty' <<<"$entry" 2>/dev/null || true)
+  if [[ -z "$fname" || "$fname" == */* || "$fname" != "$prefix".*."$ext" ]]; then
+    echo "FAIL: MeTube done entry for $prefix names file '${fname:-<none>}', expected $prefix.<title>.$ext"
+    return 1
+  fi
+  f="$METUBE_DOWNLOADS/$fname"
   mapfile -t files < <(find "$METUBE_DOWNLOADS" -maxdepth 1 -type f -name "$prefix.*.$ext" -newer "$marker" 2>/dev/null)
-  f="$METUBE_DOWNLOADS/$prefix.$TITLE.$ext"
   if [[ "${#files[@]}" -ne 1 || "${files[0]}" != "$f" || ! -s "$f" ]]; then
     echo "FAIL: expected exactly one new non-empty $f, found ${#files[@]}: ${files[*]:-none}"
     return 1
