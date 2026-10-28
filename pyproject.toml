@@ -1,0 +1,20 @@
+[build-system]
+requires = ["hatchling==1.32.4"]
+build-backend = "hatchling.build"
+
+[project]
+name = "yt-dlp-audiocom"
+version = "0.1.0"
+description = "yt-dlp plugin extractor for audio.com single tracks"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["yt-dlp", "pytest==9.1.1"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["yt_dlp_plugins"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
