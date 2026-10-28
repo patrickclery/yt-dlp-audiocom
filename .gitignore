@@ -8,3 +8,4 @@ dist/
 *.m4a
 *.mp3
 *.info.json
+.claude/worktrees/
