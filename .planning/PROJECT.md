@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A yt-dlp extractor for audio.com single-track pages (e.g. `https://audio.com/<user>/audio/<slug>`), so they can be downloaded programmatically. It is built to be contributed upstream to yt-dlp via PR, and in the meantime shipped as a yt-dlp plugin that Patrick's MeTube container loads, so pasting an audio.com link into MeTube just works.
+A yt-dlp extractor for audio.com single-track pages (e.g. `https://audio.com/<user>/audio/<slug>`), so they can be downloaded programmatically. It ships as a yt-dlp plugin that Patrick's MeTube container loads, so pasting an audio.com link into MeTube just works.
 
 ## Core Value
 
@@ -16,16 +16,15 @@ Pasting an audio.com track URL into MeTube (or `yt-dlp`) downloads the audio fil
 
 ### Active
 
-- [ ] Research prior art on GitHub (existing audio.com downloaders/extractors, open yt-dlp issues/PRs) before building
 - [ ] yt-dlp extractor recognizes audio.com single-track URLs and extracts the audio stream
 - [ ] Extracts metadata: title, uploader, duration, thumbnail, description where available
-- [ ] Gets past audio.com's Cloudflare anti-bot challenge (generic extractor currently gets HTTP 403)
-- [ ] Extractor follows yt-dlp contribution conventions (code style, `_TESTS`, flake8/ruff, CONTRIBUTING.md) so it is PR-ready
+- [ ] Avoids audio.com's Cloudflare page challenge by using oEmbed + public API (no impersonation)
+- [ ] Extractor follows yt-dlp code conventions (`_TESTS`, `traverse_obj`, ruff)
 - [ ] Same code packaged as a yt-dlp plugin mounted into the existing MeTube Docker container
-- [ ] Upstream PR opened against yt-dlp/yt-dlp
 
 ### Out of Scope
 
+- Agent-authored upstream yt-dlp PR — yt-dlp CONTRIBUTING forbids LLM/agent-written patches and PR text; Patrick may hand-write one himself
 - Collections/playlists — not needed for occasional personal saves; can follow later
 - Whole-profile downloads — same reason
 - Standalone CLI/GUI — yt-dlp + MeTube already cover the interface
@@ -50,8 +49,8 @@ Pasting an audio.com track URL into MeTube (or `yt-dlp`) downloads the audio fil
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
 | Build a yt-dlp extractor, not a standalone tool | MeTube is just a yt-dlp front end; an extractor makes both work | — Pending |
-| Target upstream PR to yt-dlp | Benefits everyone, maintained long-term by upstream | — Pending |
-| Also ship as plugin for MeTube | Upstream review can take weeks; want it usable now | — Pending |
+| Plugin only; no agent-built upstream PR | yt-dlp bans AI-authored contributions (research 2026-10-28) | — Pending |
+| oEmbed → api.audio.com/audio/<id> data path | API host isn't behind Cloudflare; prototype downloaded reference track | — Pending |
 | Single tracks only for v1 | Use case is occasional personal saves | — Pending |
 
 ## Evolution
@@ -72,4 +71,4 @@ This document evolves at phase transitions and milestone boundaries.
 4. Update Context with current state
 
 ---
-*Last updated: 2026-10-28 after initialization*
+*Last updated: 2026-10-28 after research (no prior art found; upstream AI policy)*
