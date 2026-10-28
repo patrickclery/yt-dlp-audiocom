@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Track Downloads via yt-dlp** - Plugin repo, recorded fixtures from 5+ tracks, and an `AudioComIE` that downloads mp3/m4a with correct metadata (completed 2026-10-28)
 - [x] **Phase 2: Edge Cases and Version Compatibility** - Originals gated on `is_downloadable`, clean errors, `_TESTS`, and checks on yt-dlp 2026.08.19 and current stable (completed 2026-10-28)
-- [ ] **Phase 3: MeTube Deploy** - Plugin installed into the MeTube container next to existing plugins, plus README for install, update, and removal
+- [x] **Phase 3: MeTube Deploy** - Plugin installed into the MeTube container next to existing plugins, plus README for install, update, and removal (completed 2026-10-28)
 
 ## Phase Details
 
@@ -78,11 +78,11 @@ Plans:
   2. Pasting the reference audio.com URL into MeTube produces a playable audio file with the correct title in the download folder.
   3. The README covers install, update, and the step to delete the plugin once bundled yt-dlp includes `[audiocom]`. Following its install steps reproduces the working deploy.
 
-**Plans:** 1 plan
+**Plans:** 1/1 plans complete
 
 Plans:
 **Wave 1**
-- [ ] 03-01-PLAN.md — User runs the sudo install (blocking checkpoint). Tracer: `scripts/deploy-metube.sh` restarts MeTube, checks the plugin loads, and a MeTube smoke submission saves a fresh tagged m4a. Then: README MeTube install/update/remove, a restart guard for active downloads, `--check`, and audio-mode mp3
+- [x] 03-01-PLAN.md — User runs the sudo install (blocking checkpoint). Tracer: `scripts/deploy-metube.sh` restarts MeTube, checks the plugin loads, and a MeTube smoke submission saves a fresh tagged m4a. Then: README MeTube install/update/remove, a restart guard for active downloads, `--check`, and audio-mode mp3
 
 ## Progress
 
@@ -93,4 +93,4 @@ Phases execute in numeric order: 1 → 2 → 3
 |-------|----------------|--------|-----------|
 | 1. Track Downloads via yt-dlp | 2/2 | Complete    | 2026-10-28 |
 | 2. Edge Cases and Version Compatibility | 3/3 | Complete    | 2026-10-28 |
-| 3. MeTube Deploy | 0/1 | Planned | - |
+| 3. MeTube Deploy | 1/1 | Complete    | 2026-10-28 |

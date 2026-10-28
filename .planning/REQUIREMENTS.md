@@ -22,9 +22,9 @@
 
 ### MeTube Deploy
 
-- [ ] **METB-01**: Plugin is installed into `/opt/metube/plugins/yt_dlp_plugins/extractor/` alongside the existing `rumble_fix.py` without breaking it or MeTube's other plugins
-- [ ] **METB-02**: User pastes the reference audio.com URL into MeTube's web UI and gets a playable audio file in the download folder
-- [ ] **METB-03**: README documents install, update, and the step to remove the plugin once a built-in audio.com extractor exists
+- [x] **METB-01**: Plugin is installed into `/opt/metube/plugins/yt_dlp_plugins/extractor/` alongside the existing `rumble_fix.py` without breaking it or MeTube's other plugins
+- [x] **METB-02**: User pastes the reference audio.com URL into MeTube's web UI and gets a playable audio file in the download folder
+- [x] **METB-03**: README documents install, update, and the step to remove the plugin once a built-in audio.com extractor exists
 
 ## v2 Requirements
 
@@ -55,9 +55,9 @@
 | PLUG-01 | Phase 1 | Complete |
 | PLUG-02 | Phase 2 | Complete |
 | PLUG-03 | Phase 2 | Complete |
-| METB-01 | Phase 3 | Pending |
-| METB-02 | Phase 3 | Pending |
-| METB-03 | Phase 3 | Pending |
+| METB-01 | Phase 3 | Complete |
+| METB-02 | Phase 3 | Complete |
+| METB-03 | Phase 3 | Complete |
 
 **Coverage:**
 - v1 requirements: 12 total

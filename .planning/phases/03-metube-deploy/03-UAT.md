@@ -1,5 +1,5 @@
 ---
-status: testing
+status: complete
 phase: 03-metube-deploy
 source: [03-VERIFICATION.md]
 started: 2026-10-28T20:01:58Z
@@ -18,22 +18,22 @@ awaiting: user response
 
 ### 1. Plex playback of smoke files
 expected: Plays, correct tags
-result: [pending]
+result: pass
 
 ### 2. Accept review-driven deviations (sudo systemctl restart via unit/guard; compose-recreated container reported OK)
 expected: Accepted
-result: [pending]
+result: pass
 
 ### 3. Interrupted/parallel downloads of same track (untested — needs restart)
 expected: Accept as untested
-result: [pending]
+result: pass
 
 ## Summary
 
 total: 3
-passed: 0
+passed: 3
 issues: 0
-pending: 3
+pending: 0
 skipped: 0
 blocked: 0
 
