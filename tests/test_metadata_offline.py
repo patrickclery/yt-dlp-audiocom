@@ -1,7 +1,7 @@
 """Offline metadata mapping (EXTR-05, D-08, D-10, D-11) against recorded fixtures."""
 import pytest
 
-from conftest import FIXTURE_PATHS, REFERENCE_ID, load_fixture, patch_api, run_extract
+from conftest import FIXTURE_PATHS, REFERENCE_ID, current_transcodings, load_fixture, patch_api, run_extract
 from yt_dlp_plugins.extractor.audiocom import AudioComIE
 
 # id: (uploader, duration s, upload_date, thumbnail present, description present)
@@ -16,6 +16,8 @@ EXPECTED = {
     '1880272651234303': ('SHIVGAS', 189.675, '20261028', True, True),
     '1880272945380630': ('alec Murray', 38.792, '20261028', False, False),
     '1880272416485027': ('Andrea Mathiopoulos', 10.789, '20261028', False, False),
+    '1772828397072996': ('Trebor', 314.088, '20230730', True, True),  # newest upload's duration
+    '1858402410391836': ('Maya', 173.035, '20260228', True, True),  # newest upload's duration
 }
 COUNT_KEYS = ('view_count', 'like_count', 'comment_count', 'repost_count')
 COVER_FIXTURE_ID = '1880272428195927'  # roshimakr21: real cover art
@@ -36,7 +38,7 @@ def test_metadata_fields(fx):
     assert info['uploader_id'] == audio['username']
     assert info['uploader_url'] == 'https://audio.com/' + audio['username']
     assert isinstance(info['duration'], float)
-    assert info['duration'] == audio['transcodings'][0]['duration'] / 1000 == duration
+    assert info['duration'] == current_transcodings(audio)[0]['duration'] / 1000 == duration
     assert info['timestamp'] == audio['date_created']
     assert processed['upload_date'] == upload_date
     assert ('thumbnail' in info) is has_thumb

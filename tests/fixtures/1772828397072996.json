@@ -1,0 +1,82 @@
+{
+ "audio": {
+  "author_name": "Trebor",
+  "avatar": "https://audio.com/s3w/audio.com.static/user/avatar/80/48/1775959369354880.jpeg",
+  "date_created": 1690700909,
+  "description": "Excerpt of ... https://audio.com/kenneth-daidone/audio/billie-s-bounce\n\nBefore-After-Before-After-etc.\nAfter's have modified Stereo image, EQ, & multi-band compression.",
+  "id": "1772828397072996",
+  "image": "https://audio.com/s3w/audio.com.static/audio/image/96/29/1772828397072996-1772829416818456.jpeg",
+  "is_downloadable": false,
+  "is_public": false,
+  "sources": [
+   {
+    "bit_rate": 1536000,
+    "channels": 2,
+    "codec": "pcm_s16le",
+    "date_created": 1690700910,
+    "duration": 240000,
+    "format": "wav",
+    "id": "1772828398220178",
+    "sample_rate": 48000,
+    "size": 46080326,
+    "type": "audio/wav",
+    "url": "https://s3.ustatik.com/audio.com.audio/source/96/29/1772828397072996-1772828398220178.wav"
+   },
+   {
+    "bit_rate": 1536000,
+    "channels": 2,
+    "codec": "pcm_s16le",
+    "date_created": 1690909118,
+    "duration": 314056,
+    "format": "wav",
+    "id": "1773046719874617",
+    "sample_rate": 48000,
+    "size": 60299160,
+    "type": "audio/wav",
+    "url": "https://s3.ustatik.com/audio.com.audio/source/96/29/1772828397072996-1773046719874617.wav"
+   }
+  ],
+  "stats": {
+   "comments_count": 3,
+   "likes_count": 0,
+   "plays_count": 4,
+   "shares_count": 0
+  },
+  "tags": [
+   "jazz",
+   "live"
+  ],
+  "title": "louder_Jazz_BABABA",
+  "transcodings": [
+   {
+    "bit_rate": 320000,
+    "channels": 2,
+    "codec": "mp3",
+    "duration": 240024,
+    "format": "mp3",
+    "sample_rate": 48000,
+    "size": 9602094,
+    "source_id": "1772828398220178",
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/96/29/1772828397072996-1772828398220178-1772828482973364.mp3"
+   },
+   {
+    "bit_rate": 320000,
+    "channels": 2,
+    "codec": "mp3",
+    "duration": 314088,
+    "format": "mp3",
+    "sample_rate": 48000,
+    "size": 12564743,
+    "source_id": "1773046719874617",
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/96/29/1772828397072996-1773046719874617-1773046834277238.mp3"
+   }
+  ],
+  "username": "anonymous-audio"
+ },
+ "oembed": {
+  "iframe_url": "https://audio.com/embed/audio/1772828397072996"
+ },
+ "url": "https://audio.com/anonymous-audio/audio/louder-jazz-bababa"
+}

@@ -6,7 +6,7 @@ from yt_dlp.networking import Response
 from yt_dlp.networking.exceptions import HTTPError
 from yt_dlp.utils import ExtractorError
 
-from conftest import API, FIXTURE_PATHS, REFERENCE_ID, load_fixture, patch_api, run_extract
+from conftest import API, FIXTURE_PATHS, REFERENCE_ID, current_transcodings, load_fixture, patch_api, run_extract
 from yt_dlp_plugins.extractor.audiocom import AudioComIE
 
 # Highest-bitrate format per fixture (context table "best" column, D-07).
@@ -21,7 +21,11 @@ BEST = {
     '1880272651234303': 'mp3',  # mp3 160 > m4a 111.6
     '1880272945380630': 'm4a',  # mp3 192 < m4a 218.454
     '1880272416485027': 'm4a',  # mp3 192 < m4a 241.053
+    '1772828397072996': 'mp3',  # newest source: one mp3
+    '1858402410391836': 'm4a',  # newest source: mp3 192 < m4a 311.263
 }
+LOUDER_JAZZ_ID = '1772828397072996'  # unlisted; 240 s upload replaced by a 314 s one
+BESO_ID = '1858402410391836'  # old source: mp3; newest source: mp3 + m4a
 
 
 REFERENCE_SLUG = 'rusted-pitchfork-dana-liske-uncut-version-astrayal-best'
@@ -55,10 +59,15 @@ def test_requests_are_canonical_without_impersonation(fx):
 
 def test_formats_mirror_transcodings(fx):
     data, _ = fx
-    info, _ = run_extract(data['url'])
-    playable = [t for t in data['audio']['transcodings'] if t.get('url')]
-    assert len(info['formats']) == len(playable)
-    for f, t in zip(info['formats'], playable):
+    info, processed = run_extract(data['url'])
+    # The original upload (02-03) is not a transcoding, so it is left out here.
+    formats = [f for f in info['formats'] if f['format_id'] != 'original']
+    current = current_transcodings(data['audio'])
+    assert len(formats) == len(current)
+    ids = [f['format_id'] for f in processed['formats']]
+    assert len(ids) == len(set(ids))
+    assert not [i for i in ids if i.endswith(('-0', '-1'))]
+    for f, t in zip(formats, current):
         assert f['ext'] == t['format']
         assert f['ext'] in {'mp3', 'm4a'}
         assert f['format_id'] == f['ext']
@@ -70,6 +79,102 @@ def test_formats_mirror_transcodings(fx):
         assert f['audio_channels'] == t['channels']
         assert f['filesize'] == t['size']
         assert f['url'] == t['url']
+
+
+def _newest_source(audio):
+    return max(audio['sources'], key=lambda s: s['date_created'])
+
+
+def test_multi_version_fixtures_present():
+    for track_id in (LOUDER_JAZZ_ID, BESO_ID):
+        assert len(load_fixture(track_id)['audio']['sources']) >= 2
+    assert load_fixture(LOUDER_JAZZ_ID)['audio']['is_public'] is False
+    assert load_fixture(BESO_ID)['audio']['is_public'] is True
+
+
+def test_multi_version_louder_jazz_only_newest(monkeypatch):
+    # D-11 on real data; also D-09: an unlisted track extracts.
+    data = load_fixture(LOUDER_JAZZ_ID)
+    audio = data['audio']
+    newest = _newest_source(audio)
+    assert newest['date_created'] == 1690909118
+    patch_api(monkeypatch, data['oembed'], audio)
+    info, processed = run_extract(data['url'])
+    assert [f['ext'] for f in info['formats']] == ['mp3']
+    assert info['formats'][0]['url'] == next(
+        t['url'] for t in audio['transcodings'] if t['source_id'] == newest['id'])
+    assert info['duration'] == 314.088
+    assert processed['format_id'] == 'mp3'
+
+
+def test_multi_version_beso_only_newest(monkeypatch):
+    data = load_fixture(BESO_ID)
+    audio = data['audio']
+    newest = _newest_source(audio)
+    old_urls = {t['url'] for t in audio['transcodings'] if t['source_id'] != newest['id']}
+    assert old_urls
+    patch_api(monkeypatch, data['oembed'], audio)
+    info, _ = run_extract(data['url'])
+    assert sorted(f['ext'] for f in info['formats']) == ['m4a', 'mp3']
+    assert {f['url'] for f in info['formats']} == {
+        t['url'] for t in audio['transcodings'] if t['source_id'] == newest['id']}
+    assert not old_urls & {f['url'] for f in info['formats']}
+    assert info['duration'] == 173.035
+
+
+def _format_urls(monkeypatch, data):
+    patch_api(monkeypatch, data['oembed'], data['audio'])
+    return [f['url'] for f in run_extract(data['url'])[0]['formats']]
+
+
+def _all_playable_urls(audio):
+    return [t['url'] for t in audio['transcodings'] if t.get('url')]
+
+
+def test_mutation_no_sources_keeps_every_transcoding(monkeypatch):
+    data = load_fixture(BESO_ID)
+    del data['audio']['sources']
+    assert _format_urls(monkeypatch, data) == _all_playable_urls(data['audio'])
+    data = _reference()
+    del data['audio']['sources']
+    assert _format_urls(monkeypatch, data) == _all_playable_urls(data['audio'])
+
+
+def test_mutation_no_source_id_keeps_every_transcoding(monkeypatch):
+    data = load_fixture(BESO_ID)
+    for t in data['audio']['transcodings']:
+        del t['source_id']
+    assert _format_urls(monkeypatch, data) == _all_playable_urls(data['audio'])
+
+
+def test_mutation_date_tie_goes_to_later_source(monkeypatch):
+    data = _reference()
+    audio = data['audio']
+    first = audio['sources'][0]
+    audio['sources'].append({**first, 'id': '9999999999999999'})
+    later = {**audio['transcodings'][0], 'source_id': '9999999999999999',
+             'url': audio['transcodings'][0]['url'].rsplit('/', 1)[0] + '/later.mp3'}
+    audio['transcodings'].append(later)
+    assert current_transcodings(audio) == [later]
+    assert _format_urls(monkeypatch, data) == [later['url']]
+
+
+def test_mutation_missing_and_string_dates(monkeypatch):
+    data = load_fixture(BESO_ID)
+    old, new = data['audio']['sources']
+    # The newer source loses its date (counts as 0); the older one's date becomes a
+    # numeric string, which must compare as its integer, so the older source wins.
+    del new['date_created']
+    old['date_created'] = str(old['date_created'])
+    expected = [t['url'] for t in data['audio']['transcodings'] if t['source_id'] == old['id']]
+    assert [t['url'] for t in current_transcodings(data['audio'])] == expected
+    assert _format_urls(monkeypatch, data) == expected
+
+
+def test_mutation_no_transcoding_matches_newest(monkeypatch):
+    data = load_fixture(BESO_ID)
+    _newest_source(data['audio'])['id'] = '1111111111111111'
+    assert _format_urls(monkeypatch, data) == _all_playable_urls(data['audio'])
 
 
 def test_mp3_only_yields_one_format(fx):

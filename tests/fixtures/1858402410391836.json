@@ -1,0 +1,93 @@
+{
+ "audio": {
+  "author_name": "Maya",
+  "avatar": "https://audio.com/s3w/audio.com.static/user/avatar/10/02/1875430227420210.jpeg",
+  "date_created": 1772310648,
+  "description": "*Beso* 🎶  \nOriginal song by _Jósean Log, 2015_.  \nPerformed by Maya\n\nInnsbruck, Austria 🇦🇹  \n28 February 2026",
+  "id": "1858402410391836",
+  "image": "https://audio.com/s3w/audio.com.static/user/avatar/10/02/1875430227420210.jpeg",
+  "is_downloadable": false,
+  "is_public": true,
+  "sources": [
+   {
+    "bit_rate": 156251,
+    "channels": 2,
+    "codec": "mp3",
+    "date_created": 1772310648,
+    "duration": 172487,
+    "format": "mp3",
+    "id": "1858402410459955",
+    "sample_rate": 44100,
+    "size": 3369014,
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/source/36/18/1858402410391836-1858402410459955.mp3"
+   },
+   {
+    "bit_rate": 156459,
+    "channels": 2,
+    "codec": "mp3",
+    "date_created": 1772449738,
+    "duration": 173035,
+    "format": "mp3",
+    "id": "1858548257105810",
+    "sample_rate": 44100,
+    "size": 3384241,
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/source/36/18/1858402410391836-1858548257105810.mp3"
+   }
+  ],
+  "stats": {
+   "comments_count": 0,
+   "likes_count": 0,
+   "plays_count": 11,
+   "shares_count": 0
+  },
+  "tags": [
+   "cover"
+  ],
+  "title": "Beso",
+  "transcodings": [
+   {
+    "bit_rate": 192000,
+    "channels": 2,
+    "codec": "mp3",
+    "duration": 172487,
+    "format": "mp3",
+    "sample_rate": 44100,
+    "size": 4140302,
+    "source_id": "1858402410459955",
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/36/18/1858402410391836-1858402410459955-1858402418324418.mp3"
+   },
+   {
+    "bit_rate": 192000,
+    "channels": 2,
+    "codec": "mp3",
+    "duration": 173035,
+    "format": "mp3",
+    "sample_rate": 44100,
+    "size": 4153468,
+    "source_id": "1858548257105810",
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/36/18/1858402410391836-1858548257105810-1858548262645893.mp3"
+   },
+   {
+    "bit_rate": 311263,
+    "channels": 2,
+    "codec": "aac",
+    "duration": 173000,
+    "format": "m4a",
+    "sample_rate": 44100,
+    "size": 6762679,
+    "source_id": "1858548257105810",
+    "type": "audio/m4a",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/36/18/1858402410391836-1858548257105810-1858548263170409.m4a"
+   }
+  ],
+  "username": "stefaniecg"
+ },
+ "oembed": {
+  "iframe_url": "https://audio.com/embed/audio/1858402410391836"
+ },
+ "url": "https://audio.com/stefaniecg/audio/beso"
+}
