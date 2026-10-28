@@ -19,6 +19,8 @@ from yt_dlp_plugins.extractor.audiocom import AudioComIE
 
 FIXTURE_DIR = pathlib.Path(__file__).resolve().parent.parent / 'tests' / 'fixtures'
 
+# Single source of the redaction rules: tests/test_fixture_hygiene.py imports these
+# and check_record() so the recorder and the hygiene test cannot drift apart.
 AUDIO_KEYS = ('id', 'username', 'author_name', 'title', 'description', 'image', 'avatar',
               'date_created', 'tags', 'stats', 'transcodings')
 STATS_KEYS = ('plays_count', 'likes_count', 'comments_count', 'shares_count')
@@ -59,8 +61,25 @@ def strings(obj):
             yield from strings(v)
 
 
+def _check_keys(obj, allowed, name):
+    if not isinstance(obj, dict) or not set(obj) <= set(allowed):
+        raise RefusedError(f'unexpected keys or type in {name}')
+
+
 def check_record(rec):
     """Raise RefusedError unless a projected record is safe to commit."""
+    if not isinstance(rec, dict) or set(rec) != {'url', 'oembed', 'audio'}:
+        raise RefusedError('unexpected top-level keys')
+    if not isinstance(rec['oembed'], dict) or set(rec['oembed']) != {'iframe_url'}:
+        raise RefusedError('unexpected keys or type in oembed')
+    _check_keys(rec['audio'], AUDIO_KEYS, 'audio')
+    if 'stats' in rec['audio']:
+        _check_keys(rec['audio']['stats'], STATS_KEYS, 'stats')
+    transcodings = rec['audio'].get('transcodings') or []
+    if not isinstance(transcodings, list):
+        raise RefusedError('unexpected type for transcodings')
+    for t in transcodings:
+        _check_keys(t, TRANSCODING_KEYS, 'transcodings[]')
     text = json.dumps(rec, ensure_ascii=False, sort_keys=True).lower()
     hits = [m for m in FORBIDDEN_MARKERS if m in text]
     if hits:

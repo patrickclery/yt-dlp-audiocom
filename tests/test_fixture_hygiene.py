@@ -1,4 +1,8 @@
-"""Recorded fixtures must be commit-safe: no signed URLs, secrets or unread fields (D-09, D-13)."""
+"""Recorded fixtures must be commit-safe: no signed URLs, secrets or unread fields (D-09, D-13).
+
+The redaction rules live in scripts/record_fixture.py; this module reuses them so
+the recorder and this test cannot drift apart (WR-07).
+"""
 import json
 import pathlib
 
@@ -9,28 +13,9 @@ from scripts.record_fixture import RefusedError, check_record, project
 FIXTURE_DIR = pathlib.Path(__file__).parent / 'fixtures'
 FIXTURES = sorted(FIXTURE_DIR.glob('*.json'))
 
-FORBIDDEN_MARKERS = ('x-amz-', 'signature', 'token', 'client_secret', 'stripe')
-AUDIO_KEYS = {'id', 'username', 'author_name', 'title', 'description', 'image', 'avatar',
-              'date_created', 'tags', 'stats', 'transcodings'}
-STATS_KEYS = {'plays_count', 'likes_count', 'comments_count', 'shares_count'}
-TRANSCODING_KEYS = {'format', 'type', 'url', 'size', 'codec', 'sample_rate', 'channels',
-                    'duration', 'bit_rate'}
-
 
 def _load(path):
     return json.loads(path.read_text(encoding='utf-8'))
-
-
-def _strings(obj):
-    if isinstance(obj, str):
-        yield obj
-    elif isinstance(obj, dict):
-        for k, v in obj.items():
-            yield from _strings(k)
-            yield from _strings(v)
-    elif isinstance(obj, list):
-        for v in obj:
-            yield from _strings(v)
 
 
 def test_fixture_count():
@@ -38,29 +23,25 @@ def test_fixture_count():
 
 
 @pytest.mark.parametrize('path', FIXTURES, ids=lambda p: p.stem)
-def test_no_forbidden_markers(path):
-    text = path.read_text(encoding='utf-8').lower()
-    assert [m for m in FORBIDDEN_MARKERS if m in text] == []
+def test_passes_recorder_check(path):
+    # Allowlisted keys, no forbidden markers, no URL with a query or fragment.
+    check_record(_load(path))
 
 
-@pytest.mark.parametrize('path', FIXTURES, ids=lambda p: p.stem)
-def test_urls_have_no_query_or_fragment(path):
-    for s in _strings(_load(path)):
-        if '://' in s:
-            assert '?' not in s and '#' not in s, 'URL with query or fragment in fixture'
-
-
-@pytest.mark.parametrize('path', FIXTURES, ids=lambda p: p.stem)
-def test_keys_within_allowlist(path):
-    data = _load(path)
-    assert set(data) == {'url', 'oembed', 'audio'}
-    assert set(data['oembed']) == {'iframe_url'}
-    audio = data['audio']
-    assert set(audio) <= AUDIO_KEYS
-    if 'stats' in audio:
-        assert set(audio['stats']) <= STATS_KEYS
-    for t in audio.get('transcodings') or []:
-        assert set(t) <= TRANSCODING_KEYS
+@pytest.mark.parametrize('mutate', [
+    lambda r: r['audio'].update(secret='x'),
+    lambda r: r['audio']['stats'].update(revenue=1),
+    lambda r: r['audio']['transcodings'][0].update(signed='x'),
+    lambda r: r['oembed'].update(html='x'),
+    lambda r: r.update(extra={}),
+    lambda r: r['audio'].update(title='Bearer token'),
+    lambda r: r['audio'].update(title='https://cdn.example/a?x=1'),
+], ids=['audio-key', 'stats-key', 'transcoding-key', 'oembed-key', 'top-key', 'marker', 'query'])
+def test_recorder_check_rejects(mutate):
+    rec = _load(FIXTURE_DIR / '1877766681285368.json')
+    mutate(rec)
+    with pytest.raises(RefusedError):
+        check_record(rec)
 
 
 @pytest.mark.parametrize('path', FIXTURES, ids=lambda p: p.stem)
