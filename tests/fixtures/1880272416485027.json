@@ -1,0 +1,72 @@
+{
+ "audio": {
+  "author_name": "Andrea Mathiopoulos",
+  "avatar": "",
+  "date_created": 1793167511,
+  "description": "",
+  "id": "1880272416485027",
+  "image": "",
+  "is_downloadable": true,
+  "is_public": true,
+  "sources": [
+   {
+    "bit_rate": 772469,
+    "channels": 2,
+    "codec": "wavpack",
+    "date_created": 1793167511,
+    "duration": 10747,
+    "format": "wav",
+    "id": "1880272416515608",
+    "sample_rate": 44100,
+    "size": 1037708,
+    "type": "audio/wav",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/27/50/1880272416485027-1880272416515608-1880272431447042.wav"
+   }
+  ],
+  "stats": {
+   "comments_count": 0,
+   "likes_count": 0,
+   "plays_count": 0,
+   "shares_count": 0
+  },
+  "tags": [
+   "music",
+   "speech",
+   "beatboxing",
+   "singing bowl",
+   "electronic music"
+  ],
+  "title": "Song 9: The Devil went down to Georgia",
+  "transcodings": [
+   {
+    "bit_rate": 192000,
+    "channels": 2,
+    "codec": "mp3",
+    "duration": 10789,
+    "format": "mp3",
+    "sample_rate": 44100,
+    "size": 259551,
+    "source_id": "1880272416515608",
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/27/50/1880272416485027-1880272416515608-1880272419439742.mp3"
+   },
+   {
+    "bit_rate": 241053,
+    "channels": 2,
+    "codec": "aac",
+    "duration": 10747,
+    "format": "m4a",
+    "sample_rate": 44100,
+    "size": 327184,
+    "source_id": "1880272416515608",
+    "type": "audio/m4a",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/27/50/1880272416485027-1880272416515608-1880272419461613.m4a"
+   }
+  ],
+  "username": "andrea-mathiopoulos"
+ },
+ "oembed": {
+  "iframe_url": "https://audio.com/embed/audio/1880272416485027"
+ },
+ "url": "https://audio.com/andrea-mathiopoulos/audio/song-9-the-devil-went-down-to-georgia"
+}

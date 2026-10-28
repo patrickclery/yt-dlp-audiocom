@@ -1,0 +1,72 @@
+{
+ "audio": {
+  "author_name": "alec Murray",
+  "avatar": "",
+  "date_created": 1793168015,
+  "description": "",
+  "id": "1880272945380630",
+  "image": "",
+  "is_downloadable": true,
+  "is_public": true,
+  "sources": [
+   {
+    "bit_rate": 64697,
+    "channels": 1,
+    "codec": "aac",
+    "date_created": 1793168015,
+    "duration": 38801,
+    "format": "m4a",
+    "id": "1880272945432186",
+    "sample_rate": 44100,
+    "size": 331730,
+    "type": "audio/m4a",
+    "url": "https://s3.ustatik.com/audio.com.audio/source/30/06/1880272945380630-1880272945432186.m4a"
+   }
+  ],
+  "stats": {
+   "comments_count": 0,
+   "likes_count": 0,
+   "plays_count": 2,
+   "shares_count": 0
+  },
+  "tags": [
+   "rock",
+   "hard rock",
+   "speech",
+   "rustling leaves",
+   "outside"
+  ],
+  "title": "Podcast intro",
+  "transcodings": [
+   {
+    "bit_rate": 192000,
+    "channels": 2,
+    "codec": "mp3",
+    "duration": 38792,
+    "format": "mp3",
+    "sample_rate": 44100,
+    "size": 931630,
+    "source_id": "1880272945432186",
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/30/06/1880272945380630-1880272945432186-1880272954471629.mp3"
+   },
+   {
+    "bit_rate": 218454,
+    "channels": 2,
+    "codec": "aac",
+    "duration": 38752,
+    "format": "m4a",
+    "sample_rate": 44100,
+    "size": 1066348,
+    "source_id": "1880272945432186",
+    "type": "audio/m4a",
+    "url": "https://s3.ustatik.com/audio.com.audio/transcoding/30/06/1880272945380630-1880272945432186-1880272954492959.m4a"
+   }
+  ],
+  "username": "alec-murray"
+ },
+ "oembed": {
+  "iframe_url": "https://audio.com/embed/audio/1880272945380630"
+ },
+ "url": "https://audio.com/alec-murray/audio/podcast-intro"
+}

@@ -6,6 +6,23 @@
   "description": "",
   "id": "1880272428195927",
   "image": "https://audio.com/s3w/audio.com.static/audio/image/27/59/1880272428195927-1880272718928578.jpeg",
+  "is_downloadable": true,
+  "is_public": true,
+  "sources": [
+   {
+    "bit_rate": 193081,
+    "channels": 2,
+    "codec": "mp3",
+    "date_created": 1793167522,
+    "duration": 304464,
+    "format": "mp3",
+    "id": "1880272428233402",
+    "sample_rate": 48000,
+    "size": 7366103,
+    "type": "audio/mpeg",
+    "url": "https://s3.ustatik.com/audio.com.audio/source/27/59/1880272428195927-1880272428233402.mp3"
+   }
+  ],
   "stats": {
    "comments_count": 0,
    "likes_count": 0,
@@ -29,6 +46,7 @@
     "format": "mp3",
     "sample_rate": 48000,
     "size": 7307712,
+    "source_id": "1880272428233402",
     "type": "audio/mpeg",
     "url": "https://s3.ustatik.com/audio.com.audio/transcoding/27/59/1880272428195927-1880272428233402-1880272431577916.mp3"
    },
@@ -40,6 +58,7 @@
     "format": "m4a",
     "sample_rate": 48000,
     "size": 12344914,
+    "source_id": "1880272428233402",
     "type": "audio/m4a",
     "url": "https://s3.ustatik.com/audio.com.audio/transcoding/27/59/1880272428195927-1880272428233402-1880272431599193.m4a"
    }

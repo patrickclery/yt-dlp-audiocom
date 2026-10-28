@@ -4,8 +4,10 @@ Usage: .venv/bin/python scripts/record_fixture.py URL [URL ...]
 
 For each track URL this runs AudioComIE.extract() against the live API, keeps the
 oEmbed and /audio/<id> JSON the plugin itself fetched, projects them onto an
-allowlist of fields the extractor reads, cuts every URL at its first '?' and '#'
-(the S3 presign parameters live in the query string), and writes
+allowlist of fields the extractor reads (track metadata, the is_downloadable and
+is_public flags, transcodings with their source_id, and the uploaded sources
+without their download link or original filename), cuts every URL at its first
+'?' and '#' (the S3 presign parameters live in the query string), and writes
 tests/fixtures/<audio id>.json. It prints only "<id> <fixture path>" per track and
 never prints API or media URLs. Exits non-zero if any URL failed.
 """
@@ -22,10 +24,17 @@ FIXTURE_DIR = pathlib.Path(__file__).resolve().parent.parent / 'tests' / 'fixtur
 # Single source of the redaction rules: tests/test_fixture_hygiene.py imports these
 # and check_record() so the recorder and the hygiene test cannot drift apart.
 AUDIO_KEYS = ('id', 'username', 'author_name', 'title', 'description', 'image', 'avatar',
-              'date_created', 'tags', 'stats', 'transcodings')
+              'date_created', 'tags', 'stats', 'transcodings', 'is_downloadable', 'is_public',
+              'sources')
 STATS_KEYS = ('plays_count', 'likes_count', 'comments_count', 'shares_count')
 TRANSCODING_KEYS = ('format', 'type', 'url', 'size', 'codec', 'sample_rate', 'channels',
-                    'duration', 'bit_rate')
+                    'duration', 'bit_rate', 'source_id')
+# sources[] entries (one per uploaded version). Deliberately excluded: `download` is
+# the same S3 object as `url` plus a content-disposition query that names the
+# uploader's file; `name` is the uploader's original filename; `md5`, `from`,
+# `date_updated`, `date_uploaded` and `waveform` are never read by the extractor.
+SOURCE_KEYS = ('id', 'format', 'type', 'url', 'size', 'codec', 'sample_rate', 'channels',
+               'duration', 'bit_rate', 'date_created')
 # Matched case-insensitively against the serialized record (RESEARCH.md redaction rule).
 FORBIDDEN_MARKERS = ('x-amz-', 'signature', 'token', 'client_secret', 'stripe')
 
@@ -80,6 +89,12 @@ def check_record(rec):
         raise RefusedError('unexpected type for transcodings')
     for t in transcodings:
         _check_keys(t, TRANSCODING_KEYS, 'transcodings[]')
+    sources = rec['audio'].get('sources')
+    if sources is not None:
+        if not isinstance(sources, list):
+            raise RefusedError('unexpected type for sources')
+        for s in sources:
+            _check_keys(s, SOURCE_KEYS, 'sources[]')
     text = json.dumps(rec, ensure_ascii=False, sort_keys=True).lower()
     hits = [m for m in FORBIDDEN_MARKERS if m in text]
     if hits:
@@ -106,6 +121,11 @@ def project(url, captured):
             {k: strip_url(_require(v, str, 'transcodings[].url')) if k == 'url' else v
              for k, v in _require(t, dict, 'transcodings[]').items() if k in TRANSCODING_KEYS}
             for t in record_audio['transcodings']]
+    if _require(record_audio.get('sources'), list, 'sources') is not None:
+        record_audio['sources'] = [
+            {k: strip_url(_require(v, str, 'sources[].url')) if k == 'url' else v
+             for k, v in _require(s, dict, 'sources[]').items() if k in SOURCE_KEYS}
+            for s in record_audio['sources']]
     return {
         'url': AudioComIE._canonical_url(user, slug),
         'oembed': {'iframe_url': strip_url(_require(oembed.get('iframe_url'), str, 'iframe_url'))},

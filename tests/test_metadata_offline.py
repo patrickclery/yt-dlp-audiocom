@@ -14,6 +14,8 @@ EXPECTED = {
     '1880272004207526': ('davidmoreno-musician', 351.53, '20261028', True, False),  # fallback, avatar as image
     '1880273150344633': ('james-gant', 153.574, '20261028', False, False),  # username fallback
     '1880272651234303': ('SHIVGAS', 189.675, '20261028', True, True),
+    '1880272945380630': ('alec Murray', 38.792, '20261028', False, False),
+    '1880272416485027': ('Andrea Mathiopoulos', 10.789, '20261028', False, False),
 }
 COUNT_KEYS = ('view_count', 'like_count', 'comment_count', 'repost_count')
 COVER_FIXTURE_ID = '1880272428195927'  # roshimakr21: real cover art
